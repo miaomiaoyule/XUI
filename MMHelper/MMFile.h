@@ -18,6 +18,16 @@ enum enMMFileType
 	FileType_File,
 };
 
+//image type
+enum enMMImageType
+{
+	ImageType_None,
+	ImageType_Png,
+	ImageType_Bmp,
+	ImageType_Jpg,
+	ImageType_Gif,
+};
+
 //file encode
 enum enMMFileEncode
 {
@@ -45,6 +55,8 @@ public:
 	// Parameter: 	LPCTSTR lpszFile 例：C:\Text.txt or Text.txt or txt or C:\Text
 	//************************************
 	static enMMFileType ParseFileType(LPCTSTR lpszFile);
+	static enMMImageType ParseImageType(LPCTSTR lpszFile);
+	static enMMImageType ParseImageType(const std::vector<BYTE> &vecData);
 	static bool IsWebpFile(LPCTSTR lpszFile);
 	static bool IsWebpFile(const std::vector<BYTE> &vecData);
 	static bool IsGifFile(LPCTSTR lpszFile);

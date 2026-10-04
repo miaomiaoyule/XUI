@@ -274,6 +274,18 @@ void CDUISpinCtrl::RemoveAll()
 	return;
 }
 
+CMMString CDUISpinCtrl::GetText()
+{
+	return m_pEditValueCtrl ? m_pEditValueCtrl->GetText() : CMMString();
+}
+
+bool CDUISpinCtrl::SetText(LPCTSTR lpszText)
+{
+	if (NULL == m_pEditValueCtrl) return false;
+
+	return m_pEditValueCtrl->SetText(lpszText);
+}
+
 enDuiEditTextType CDUISpinCtrl::GetEditTextType()
 {
 	return (enDuiEditTextType)m_AttributeEditTextType.GetCurSelItem();

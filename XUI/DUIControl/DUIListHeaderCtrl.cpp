@@ -123,6 +123,38 @@ void CDUIListHeaderCtrl::OnVisibleChanged(CDUIControlBase *pControl)
 	return;
 }
 
+int CDUIListHeaderCtrl::GetChildCount() const
+{
+	return __super::GetChildCount();
+}
+
+bool CDUIListHeaderCtrl::InsertChild(CDUIControlBase *pChild, int nPos)
+{
+	MMInterfaceHelper(CDUIListHeaderItemCtrl, pChild, pHeaderItem);
+	if (NULL == pHeaderItem) return false;
+
+	if (false == __super::InsertChild(pChild, nPos)) return false;
+
+	if (pHeaderItem)
+	{
+		pHeaderItem->SetOwner(this);
+	}
+
+	return true;
+}
+
+CDUIListHeaderItemCtrl * CDUIListHeaderCtrl::GetChildAt(int nIndex) const
+{
+	return static_cast<CDUIListHeaderItemCtrl*>(CDUIContainerCtrl::GetChildAt(nIndex));
+}
+
+bool CDUIListHeaderCtrl::RemoveAt(int nIndex)
+{
+	if (0 == nIndex) return false;
+
+	return __super::RemoveAt(nIndex);
+}
+
 LPVOID CDUIListHeaderCtrl::QueryInterface(REFGUID Guid, DWORD dwQueryVer)
 {
 	QUERYINTERFACE(CDUIListHeaderCtrl, Guid, dwQueryVer);
@@ -197,6 +229,20 @@ CDUIRect CDUIListHeaderCtrl::GetColumnRect(int nIndex)
 	return m_rcColumn[nIndex];
 }
 
+int CDUIListHeaderCtrl::GetItemInitCount()
+{
+	return m_AttributeItemInitCount.GetValue();
+}
+
+void CDUIListHeaderCtrl::SetIteminitCount(int nCount)
+{
+	if (nCount == GetItemInitCount()) return;
+
+	m_AttributeItemInitCount.SetValue(nCount);
+
+	return;
+}
+
 void CDUIListHeaderCtrl::InitChild()
 {
 	int nCount = m_AttributeItemInitCount.GetValue();
@@ -233,24 +279,29 @@ bool CDUIListHeaderCtrl::InsertChild(int nItemCount, int nPos)
 	return true;
 }
 
-bool CDUIListHeaderCtrl::InsertChild(CDUIControlBase *pChild, int nPos)
+bool CDUIListHeaderCtrl::InsertChildAtUser(CDUIControlBase *pChild, int nPos)
 {
-	MMInterfaceHelper(CDUIListHeaderItemCtrl, pChild, pHeaderItem);
-	if (NULL == pHeaderItem) return false;
-
-	if (false == __super::InsertChild(pChild, nPos)) return false;
-
-	if (pHeaderItem)
-	{
-		pHeaderItem->SetOwner(this);
-	}
-
-	return true;
+	return InsertChild(pChild, nPos + 1);
 }
 
-CDUIListHeaderItemCtrl * CDUIListHeaderCtrl::GetChildAt(int nIndex) const
+int CDUIListHeaderCtrl::GetChildCountAtUser()
 {
-	return static_cast<CDUIListHeaderItemCtrl*>(CDUIContainerCtrl::GetChildAt(nIndex));
+	return max(GetChildCount() - 1, 0);
+}
+
+CDUIListHeaderItemCtrl * CDUIListHeaderCtrl::GetChildAtUser(int nIndex)
+{
+	return GetChildAt(nIndex + 1);
+}
+
+CDUIListHeaderItemCtrl * CDUIListHeaderCtrl::GetHeaderItemSelect()
+{
+	return m_pHeaderItemSelectCtrl;
+}
+
+bool CDUIListHeaderCtrl::RemoveAtUser(int nIndex)
+{
+	return RemoveAt(nIndex + 1);
 }
 
 bool CDUIListHeaderCtrl::Remove(CDUIControlBase *pControl)
@@ -258,13 +309,6 @@ bool CDUIListHeaderCtrl::Remove(CDUIControlBase *pControl)
 	if (pControl == m_pHeaderItemSelectCtrl) return false;
 
 	return __super::Remove(pControl);
-}
-
-bool CDUIListHeaderCtrl::RemoveAt(int nIndex)
-{
-	if (0 == nIndex) return false;
-
-	return __super::RemoveAt(nIndex);
 }
 
 void CDUIListHeaderCtrl::RemoveAll()

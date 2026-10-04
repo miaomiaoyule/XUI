@@ -331,6 +331,27 @@ enMMFileType CMMFile::ParseFileType(LPCTSTR lpszFile)
 	return FileType_None;
 }
 
+enMMImageType CMMFile::ParseImageType(LPCTSTR lpszFile)
+{
+	if (MMInvalidString(lpszFile)) return ImageType_None;
+
+	std::vector<BYTE> vecData;
+	GetFileData(lpszFile, vecData);
+	if (vecData.empty()) return ImageType_None;
+
+	return ParseImageType(vecData);
+}
+
+enMMImageType CMMFile::ParseImageType(const std::vector<BYTE> &vecData)
+{
+	if (vecData.size() >= sizeof(g_HeaderPng) && memcmp(vecData.data(), g_HeaderPng, sizeof(g_HeaderPng)) == 0) return ImageType_Png;
+	if (vecData.size() >= sizeof(g_HeaderBmp) && memcmp(vecData.data(), g_HeaderBmp, sizeof(g_HeaderBmp)) == 0) return ImageType_Bmp;
+	if (vecData.size() >= sizeof(g_HeaderGif) && memcmp(vecData.data(), g_HeaderGif, sizeof(g_HeaderGif)) == 0) return ImageType_Gif;
+	if (vecData.size() >= sizeof(g_HeaderJpg) && memcmp(vecData.data(), g_HeaderJpg, sizeof(g_HeaderJpg)) == 0) return ImageType_Jpg;
+
+	return ImageType_None;
+}
+
 bool CMMFile::IsWebpFile(LPCTSTR lpszFile)
 {
 	if (MMInvalidString(lpszFile)) return false;

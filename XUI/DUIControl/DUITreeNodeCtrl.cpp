@@ -253,7 +253,7 @@ void CDUITreeNodeCtrl::RefreshSubItem()
 	if (NULL == pListHeader) return;
 
 	//headeritem sel
-	CDUIListHeaderItemCtrl *pHeaderItemSelectCtrl = pListHeader->GetChildAt(0);
+	CDUIListHeaderItemCtrl *pHeaderItemSelectCtrl = pListHeader->GetHeaderItemSelect();
 	if (NULL == pHeaderItemSelectCtrl) return;
 
 	//column width

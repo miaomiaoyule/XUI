@@ -208,6 +208,8 @@ public:
 	//child
 	virtual CMMString GetItemModel();
 	virtual bool SetItemModel(CMMString strModel);
+	virtual int GetItemInitCount();
+	virtual void SetItemInitCount(int nCount);
 	virtual void InitChild();
 	virtual bool InsertChild(CDUIControlBase *pChild, int nPos = -1) override;
 	virtual bool InsertChild(int nItemModelCount, int nPos = -1);

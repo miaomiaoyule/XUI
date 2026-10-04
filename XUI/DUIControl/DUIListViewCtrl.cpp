@@ -1106,6 +1106,20 @@ bool CDUIListViewCtrl::SetItemModel(CMMString strModel)
 	return true;
 }
 
+int CDUIListViewCtrl::GetItemInitCount()
+{
+	return m_AttributeItemModelInitCount.GetValue();
+}
+
+void CDUIListViewCtrl::SetItemInitCount(int nCount) 
+{
+	if (nCount == GetItemInitCount()) return;
+
+	m_AttributeItemModelInitCount.SetValue(nCount);
+
+	return;
+}
+
 void CDUIListViewCtrl::InitChild()
 {
 	int nCount = m_AttributeItemModelInitCount.GetValue();

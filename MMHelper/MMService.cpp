@@ -671,6 +671,44 @@ std::string CMMService::EncryptBase64(unsigned char const* bytes_to_encode, unsi
 	return ret;
 }
 
+std::string CMMService::EncryptBase64Image(unsigned char const *bytes_to_encode, unsigned int in_len)
+{
+	std::string strBase64 = CMMService::EncryptBase64(bytes_to_encode, in_len);
+	enMMImageType ImageType = CMMFile::ParseImageType(std::vector<BYTE>(bytes_to_encode, bytes_to_encode + in_len));
+	std::string strUrl = "data:image/";
+	switch (ImageType)
+	{
+		case ImageType_Png:
+		{
+			strUrl += "png;base64,";
+
+			break;
+		}
+		case ImageType_Bmp:
+		{
+			strUrl += "bmp;base64,";
+
+			break;
+		}
+		case ImageType_Jpg:
+		{
+			strUrl += "jpeg ;base64,";
+
+			break;
+		}
+		case ImageType_Gif:
+		{
+			strUrl += "gif ;base64,";
+
+			break;
+		}
+	}
+
+	strUrl += strBase64;
+
+	return strUrl;
+}
+
 int CMMService::CompareVersion(LPCTSTR lpszVersion1, LPCTSTR lpszVersion2)
 {
 	if (NULL == lpszVersion1 || NULL == lpszVersion2) return 0;

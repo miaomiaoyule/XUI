@@ -71,6 +71,8 @@ public:
 	void RemoveAll() override;
 
 	//spin
+	virtual CMMString GetText();
+	virtual bool SetText(LPCTSTR lpszText);
 	virtual enDuiEditTextType GetEditTextType();
 	virtual void SetEditTextType(enDuiEditTextType TextType);
 	virtual CDUIRect GetEditTextPadding();

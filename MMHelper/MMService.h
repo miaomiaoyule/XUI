@@ -120,6 +120,7 @@ public:
 
 	//encrypt
 	static std::string EncryptBase64(unsigned char const* bytes_to_encode, unsigned int in_len);
+	static std::string EncryptBase64Image(unsigned char const* bytes_to_encode, unsigned int in_len);
 
 	//version
 	static int CompareVersion(LPCTSTR lpszVersion1, LPCTSTR lpszVersion2);

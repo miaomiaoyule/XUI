@@ -396,11 +396,11 @@ public:
 	}
 	CMMStringW & Trim(TCHAR ch = _T(' '))
 	{
-		while (length() > 0 && (front() == ch || (_T(' ') == ch && (_T('\t') == front() || _T('\n') == front()))))
+		while (length() > 0 && (front() == ch || (_T(' ') == ch && (_T('\t') == front() || _T('\n') == front() || _T('\r') == front()))))
 		{
 			erase(begin());
 		}
-		while (length() > 0 && (back() == ch || (_T(' ') == ch && (_T('\t') == back() || _T('\n') == back()))))
+		while (length() > 0 && (back() == ch || (_T(' ') == ch && (_T('\t') == back() || _T('\n') == back() || _T('\r') == back()))))
 		{
 			erase(--rbegin().base());
 		}

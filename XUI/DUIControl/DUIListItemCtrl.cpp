@@ -93,6 +93,18 @@ int CDUIListItemCtrl::GetChildCount() const
 	return __super::GetChildCount();
 }
 
+bool CDUIListItemCtrl::InsertChild(CDUIControlBase *pChild, int nPos)
+{
+	if (false == __super::InsertChild(pChild, nPos)) return false;
+
+	if (pChild)
+	{
+		pChild->SetOwnerModelCtrl(this);
+	}
+
+	return true;
+}
+
 CDUIControlBase * CDUIListItemCtrl::GetChildAt(int nIndex) const
 {
 	return __super::GetChildAt(nIndex);
@@ -459,7 +471,7 @@ void CDUIListItemCtrl::RefreshSubItem()
 	if (NULL == pListHeader) return;
 
 	//headeritem sel
-	CDUIListHeaderItemCtrl *pHeaderItemSelectCtrl = pListHeader->GetChildAt(0);
+	CDUIListHeaderItemCtrl *pHeaderItemSelectCtrl = pListHeader->GetHeaderItemSelect();
 	if (NULL == pHeaderItemSelectCtrl) return;
 
 	//column width
@@ -1071,18 +1083,6 @@ void CDUIListItemCtrl::PaintLineOnTileType(HDC hDC)
 	ListInfo.pAttributeColorLine->DrawLine(hDC, rcColumn, 1);
 
 	return;
-}
-
-bool CDUIListItemCtrl::InsertChild(CDUIControlBase *pChild, int nPos)
-{
-	if (false == __super::InsertChild(pChild, nPos)) return false;
-
-	if (pChild)
-	{
-		pChild->SetOwnerModelCtrl(this);
-	}
-
-	return true;
 }
 
 void CDUIListItemCtrl::SendNotify(enDuiNotifyType NotifyType, WPARAM wParam, LPARAM lParam, CMMString strTextOld)

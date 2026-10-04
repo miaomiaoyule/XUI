@@ -45,6 +45,14 @@ protected:
 	void OnSize(CDUIControlBase *pControl) override;
 	void OnVisibleChanged(CDUIControlBase *pControl) override;
 
+	//diable method, because first child is checkicon, second child is edit.
+	//traverse user custom child use GetChildCountUser()¡¢GetChildAtUser()¡¢RemoveAtUser().
+protected:
+	int GetChildCount() const override;
+	bool InsertChild(CDUIControlBase *pChild, int nPos = -1) override;
+	CDUIListHeaderItemCtrl * GetChildAt(int nIndex) const override;
+	bool RemoveAt(int nIndex) override;
+
 	//method
 public:
 	LPVOID QueryInterface(REFGUID Guid, DWORD dwQueryVer) override;
@@ -64,12 +72,16 @@ public:
 	virtual CDUIRect GetColumnRect(int nIndex);
 
 	//child
+	virtual int GetItemInitCount();
+	virtual void SetIteminitCount(int nCount);
 	virtual void InitChild();
 	virtual bool InsertChild(int nItemCount, int nPos = -1);
-	bool InsertChild(CDUIControlBase *pChild, int nPos = -1) override;
-	CDUIListHeaderItemCtrl * GetChildAt(int nIndex) const override;
+	virtual bool InsertChildAtUser(CDUIControlBase *pChild, int nPos = -1);
+	virtual int GetChildCountAtUser();
+	virtual CDUIListHeaderItemCtrl * GetChildAtUser(int nIndex);
+	virtual CDUIListHeaderItemCtrl * GetHeaderItemSelect();
+	virtual bool RemoveAtUser(int nIndex);
 	bool Remove(CDUIControlBase *pControl) override;
-	bool RemoveAt(int nIndex) override;
 	void RemoveAll() override;
 
 	//refresh

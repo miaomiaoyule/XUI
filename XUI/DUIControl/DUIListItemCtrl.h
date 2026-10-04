@@ -46,6 +46,7 @@ protected:
 	//traverse user custom child use GetChildCountUser()、GetChildAtUser()、RemoveAtUser().
 protected:
 	int GetChildCount() const override;
+	bool InsertChild(CDUIControlBase *pChild, int nPos = -1) override;
 	CDUIControlBase * GetChildAt(int nIndex) const override;
 	bool RemoveAt(int nIndex) override;
 
@@ -162,7 +163,6 @@ protected:
 
 	//help
 protected:
-	bool InsertChild(CDUIControlBase *pChild, int nPos = -1) override;
 	virtual void SendNotify(enDuiNotifyType NotifyType, WPARAM wParam = 0, LPARAM lParam = 0, CMMString strTextOld = _T(""));
 	virtual void PerformItemMouseDown(bool bLeft, const CDUIPoint &pt);
 	virtual CDUIRect GetTextRange();

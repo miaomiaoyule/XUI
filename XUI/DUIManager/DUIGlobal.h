@@ -62,6 +62,7 @@ class XUI_API CDUIGlobal
 	friend class CDlgWizardVariant;
 	friend class CDlgWizardNotify;
 	friend class CNotifyView;
+	friend class CAiBuilder;
 	friend class CDTDesignerApp;
 
 private:
