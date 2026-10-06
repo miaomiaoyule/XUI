@@ -372,6 +372,8 @@ namespace Gdiplus
 		void SetPixelOffsetMode(PixelOffsetMode) {}
 		void SetCompositingQuality(CompositingQuality) {}
 		void SetTextRenderingHint(TextRenderingHint) {}
+		Status TranslateTransform(REAL dx, REAL dy, MatrixOrder order = MatrixOrderPrepend);
+		Status RotateTransform(REAL angle, MatrixOrder order = MatrixOrderPrepend);
 
 		Status DrawLine(Pen *pen, INT x1, INT y1, INT x2, INT y2);
 		Status DrawRectangle(Pen *pen, INT x, INT y, INT w, INT h);
@@ -382,6 +384,7 @@ namespace Gdiplus
 		Status FillEllipse(Brush *brush, INT x, INT y, INT w, INT h);
 		Status FillPath(Brush *brush, GraphicsPath *path);
 		Status DrawImage(Bitmap *bmp, const Rect &dest, INT srcX, INT srcY, INT srcW, INT srcH, Unit);
+		// pts[0] top-left, pts[1] top-right, pts[2] bottom-left.
 		Status DrawImage(Bitmap *bmp, PointF *pts, INT count);
 		Status MeasureString(const WCHAR *str, INT len, const Font *font, const RectF &layout, const StringFormat *fmt, RectF *boundingBox);
 		Status DrawString(const WCHAR *str, INT len, const Font *font, const RectF &layout, const StringFormat *fmt, Brush *brush);
@@ -389,8 +392,19 @@ namespace Gdiplus
 	private:
 		IDuiCanvas *m_pCanvas;
 		bool m_bOwnCanvas;
+		float m_m11 = 1.0f;
+		float m_m12 = 0.0f;
+		float m_m21 = 0.0f;
+		float m_m22 = 1.0f;
+		float m_dx = 0.0f;
+		float m_dy = 0.0f;
 		DWORD PenColor(Pen *pen) const { return pen ? pen->GetColor().GetValue() : 0; }
 		int PenWidth(Pen *pen) const { return pen ? max(1, (int)(pen->GetWidth() + 0.5f)) : 1; }
+		bool IsWorldIdentity() const;
+		void MultiplyWorld(float n11, float n12, float n21, float n22, float ndx, float ndy, MatrixOrder order);
+		void TransformPoint(float x, float y, float &ox, float &oy) const;
+		Status BlitBitmap(Bitmap *bmp, int x, int y, int w, int h, int srcX, int srcY, int srcW, int srcH);
+		Status DrawImageWarp(Bitmap *bmp, const PointF *pts, int srcX, int srcY, int srcW, int srcH);
 	};
 }
 

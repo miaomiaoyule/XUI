@@ -269,7 +269,7 @@ bool CDUIListHeaderCtrl::InsertChild(int nItemCount, int nPos)
 
 		pItem->Init();
 
-		if (false == InsertChild(pItem, nPos))
+		if (false == InsertChildAtUser(pItem, nPos))
 		{
 			assert(false);
 			return false;
@@ -281,7 +281,7 @@ bool CDUIListHeaderCtrl::InsertChild(int nItemCount, int nPos)
 
 bool CDUIListHeaderCtrl::InsertChildAtUser(CDUIControlBase *pChild, int nPos)
 {
-	return InsertChild(pChild, nPos + 1);
+	return InsertChild(pChild, -1 != nPos ? nPos + 1 : nPos);
 }
 
 int CDUIListHeaderCtrl::GetChildCountAtUser()

@@ -1042,6 +1042,7 @@ void CDUIWndBase::SendNotify(DuiNotify &Notify)
 
 	Notify.uCtrlID = Notify.pNotifyCtrl->GetCtrlID();
 	Notify.ptMouse = m_ptMousePosLast;
+	Notify.ptMousePre = m_ptMousePosPre;
 	Notify.wKeyState = MapWndKeyState();
 	Notify.dwTimestamp = ::GetTickCount();
 
@@ -1085,6 +1086,7 @@ void CDUIWndBase::PostNotify(DuiNotify &Notify)
 	if (NULL == Notify.pNotifyCtrl || this != Notify.pNotifyCtrl->GetWndOwner()) return;
 
 	Notify.ptMouse = m_ptMousePosLast;
+	Notify.ptMousePre = m_ptMousePosPre;
 	Notify.wKeyState = MapWndKeyState();
 	Notify.dwTimestamp = ::GetTickCount();
 	m_vecAsynNotify.push_back(Notify);
@@ -1487,6 +1489,7 @@ LRESULT CDUIWndBase::OnLButtonDown(WPARAM wParam, LPARAM lParam)
 	DuiMsg.ptMousePre = m_ptMousePosLast;
 	DuiMsg.ptMouse = pt;
 
+	m_ptMousePosPre = m_ptMousePosLast;
 	m_ptMousePosLast = pt;
 	m_ptMousePosDown = pt;
 	m_dwMouseDownTick = ::GetTickCount();
@@ -1520,6 +1523,7 @@ LRESULT CDUIWndBase::OnLButtonUp(WPARAM wParam, LPARAM lParam)
 	DuiMsg.ptMousePre = m_ptMousePosLast;
 	DuiMsg.ptMouse = pt;
 
+	m_ptMousePosPre = m_ptMousePosLast;
 	m_ptMousePosLast = pt;
 	m_dwMouseDownTick = 0;
 
@@ -1551,6 +1555,7 @@ LRESULT CDUIWndBase::OnLButtonDlk(WPARAM wParam, LPARAM lParam)
 	DuiMsg.ptMousePre = m_ptMousePosLast;
 	DuiMsg.ptMouse = pt;
 
+	m_ptMousePosPre = m_ptMousePosLast;
 	m_ptMousePosLast = pt;
 
 	//find
@@ -1582,6 +1587,7 @@ LRESULT CDUIWndBase::OnRButtonDown(WPARAM wParam, LPARAM lParam)
 	DuiMsg.ptMousePre = m_ptMousePosLast;
 	DuiMsg.ptMouse = pt;
 
+	m_ptMousePosPre = m_ptMousePosLast;
 	m_ptMousePosLast = pt;
 	m_ptMousePosDown = pt;
 
@@ -1614,6 +1620,7 @@ LRESULT CDUIWndBase::OnRButtonUp(WPARAM wParam, LPARAM lParam)
 	DuiMsg.ptMousePre = m_ptMousePosLast;
 	DuiMsg.ptMouse = pt;
 
+	m_ptMousePosPre = m_ptMousePosLast;
 	m_ptMousePosLast = pt;
 
 	m_pCaptureCtrl = m_pCaptureCtrl ? m_pCaptureCtrl : FindSubControlByPoint(m_pRootCtrl, pt);
@@ -1642,6 +1649,7 @@ LRESULT CDUIWndBase::OnRButtonDlk(WPARAM wParam, LPARAM lParam)
 	DuiMsg.ptMousePre = m_ptMousePosLast;
 	DuiMsg.ptMouse = pt;
 
+	m_ptMousePosPre = m_ptMousePosLast;
 	m_ptMousePosLast = pt;
 
 	//查找

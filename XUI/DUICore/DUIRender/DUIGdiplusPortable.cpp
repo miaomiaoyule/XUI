@@ -274,24 +274,214 @@ Status Graphics::FillPath(Brush *brush, GraphicsPath *path)
 	return Ok;
 }
 
-Status Graphics::DrawImage(Bitmap *bmp, const Rect &dest, INT srcX, INT srcY, INT srcW, INT srcH, Unit)
+bool Graphics::IsWorldIdentity() const
+{
+	return 1.0f == m_m11 && 0.0f == m_m12 && 0.0f == m_m21 && 1.0f == m_m22 && 0.0f == m_dx && 0.0f == m_dy;
+}
+
+void Graphics::MultiplyWorld(float n11, float n12, float n21, float n22, float ndx, float ndy, MatrixOrder order)
+{
+	const float w11 = m_m11, w12 = m_m12, w21 = m_m21, w22 = m_m22, wdx = m_dx, wdy = m_dy;
+	const float a11 = (MatrixOrderAppend == order) ? w11 : n11;
+	const float a12 = (MatrixOrderAppend == order) ? w12 : n12;
+	const float a21 = (MatrixOrderAppend == order) ? w21 : n21;
+	const float a22 = (MatrixOrderAppend == order) ? w22 : n22;
+	const float adx = (MatrixOrderAppend == order) ? wdx : ndx;
+	const float ady = (MatrixOrderAppend == order) ? wdy : ndy;
+	const float b11 = (MatrixOrderAppend == order) ? n11 : w11;
+	const float b12 = (MatrixOrderAppend == order) ? n12 : w12;
+	const float b21 = (MatrixOrderAppend == order) ? n21 : w21;
+	const float b22 = (MatrixOrderAppend == order) ? n22 : w22;
+	const float bdx = (MatrixOrderAppend == order) ? ndx : wdx;
+	const float bdy = (MatrixOrderAppend == order) ? ndy : wdy;
+	m_m11 = a11 * b11 + a12 * b21;
+	m_m12 = a11 * b12 + a12 * b22;
+	m_m21 = a21 * b11 + a22 * b21;
+	m_m22 = a21 * b12 + a22 * b22;
+	m_dx = adx * b11 + ady * b21 + bdx;
+	m_dy = adx * b12 + ady * b22 + bdy;
+}
+
+void Graphics::TransformPoint(float x, float y, float &ox, float &oy) const
+{
+	ox = x * m_m11 + y * m_m21 + m_dx;
+	oy = x * m_m12 + y * m_m22 + m_dy;
+}
+
+Status Graphics::TranslateTransform(REAL dx, REAL dy, MatrixOrder order)
+{
+	MultiplyWorld(1.0f, 0.0f, 0.0f, 1.0f, dx, dy, order);
+	return Ok;
+}
+
+Status Graphics::RotateTransform(REAL angle, MatrixOrder order)
+{
+	const float fRad = angle * (float)M_PI / 180.0f;
+	const float fCos = cosf(fRad);
+	const float fSin = sinf(fRad);
+	MultiplyWorld(fCos, fSin, -fSin, fCos, 0.0f, 0.0f, order);
+	return Ok;
+}
+
+Status Graphics::BlitBitmap(Bitmap *bmp, int x, int y, int w, int h, int srcX, int srcY, int srcW, int srcH)
 {
 	if (NULL == m_pCanvas || NULL == bmp || NULL == bmp->GetBits()) return InvalidParameter;
-	RECT rcDst = { dest.X, dest.Y, dest.X + dest.Width, dest.Y + dest.Height };
+	RECT rcDst = { x, y, x + w, y + h };
 	RECT rcSrc = { srcX, srcY, srcX + srcW, srcY + srcH };
 	m_pCanvas->DrawImage(bmp->GetBits(), (int)bmp->GetWidth(), (int)bmp->GetHeight(), rcDst, rcSrc, {}, 255, false, false);
 	return Ok;
 }
 
+Status Graphics::DrawImage(Bitmap *bmp, const Rect &dest, INT srcX, INT srcY, INT srcW, INT srcH, Unit)
+{
+	if (NULL == m_pCanvas || NULL == bmp || NULL == bmp->GetBits()) return InvalidParameter;
+	if (IsWorldIdentity())
+	{
+		return BlitBitmap(bmp, dest.X, dest.Y, dest.Width, dest.Height, srcX, srcY, srcW, srcH);
+	}
+
+	float x0 = 0, y0 = 0, x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+	TransformPoint((float)dest.X, (float)dest.Y, x0, y0);
+	TransformPoint((float)(dest.X + dest.Width), (float)dest.Y, x1, y1);
+	TransformPoint((float)dest.X, (float)(dest.Y + dest.Height), x2, y2);
+	PointF pts[3] = { PointF(x0, y0), PointF(x1, y1), PointF(x2, y2) };
+	return DrawImageWarp(bmp, pts, srcX, srcY, srcW, srcH);
+}
+
+static void DuiSamplePremul(const BYTE *pBase, int nStride, int nSrcW, int nSrcH, float u, float v, BYTE cbOut[4])
+{
+	if (u < 0.0f || v < 0.0f || u >= (float)nSrcW || v >= (float)nSrcH)
+	{
+		cbOut[0] = cbOut[1] = cbOut[2] = cbOut[3] = 0;
+		return;
+	}
+
+	const int x0 = (int)u;
+	const int y0 = (int)v;
+	const int x1 = min(x0 + 1, nSrcW - 1);
+	const int y1 = min(y0 + 1, nSrcH - 1);
+	const float fx = u - (float)x0;
+	const float fy = v - (float)y0;
+	const BYTE *p00 = pBase + y0 * nStride + x0 * 4;
+	const BYTE *p10 = pBase + y0 * nStride + x1 * 4;
+	const BYTE *p01 = pBase + y1 * nStride + x0 * 4;
+	const BYTE *p11 = pBase + y1 * nStride + x1 * 4;
+	for (int c = 0; c < 4; ++c)
+	{
+		const float fSample = p00[c] * (1.0f - fx) * (1.0f - fy)
+			+ p10[c] * fx * (1.0f - fy)
+			+ p01[c] * (1.0f - fx) * fy
+			+ p11[c] * fx * fy;
+		cbOut[c] = (BYTE)(fSample + 0.5f);
+	}
+}
+
 Status Graphics::DrawImage(Bitmap *bmp, PointF *pts, INT count)
 {
 	if (NULL == m_pCanvas || NULL == bmp || NULL == pts || count < 3) return InvalidParameter;
-	const INT x0 = (INT)pts[0].X;
-	const INT y0 = (INT)pts[0].Y;
-	const INT x1 = (INT)pts[1].X;
-	const INT y2 = (INT)pts[2].Y;
-	Rect dest(x0, y0, max(1, x1 - x0), max(1, y2 - y0));
-	return DrawImage(bmp, dest, 0, 0, (INT)bmp->GetWidth(), (INT)bmp->GetHeight(), UnitPixel);
+
+	PointF wpts[3];
+	for (int n = 0; n < 3; ++n)
+	{
+		float x = 0, y = 0;
+		TransformPoint(pts[n].X, pts[n].Y, x, y);
+		wpts[n] = PointF(x, y);
+	}
+
+	const float v1x = wpts[1].X - wpts[0].X;
+	const float v1y = wpts[1].Y - wpts[0].Y;
+	const float v2x = wpts[2].X - wpts[0].X;
+	const float v2y = wpts[2].Y - wpts[0].Y;
+	if (0.0f == v1y && 0.0f == v2x && v1x > 0.0f && v2y > 0.0f)
+	{
+		return BlitBitmap(bmp, (int)floorf(wpts[0].X), (int)floorf(wpts[0].Y),
+			max(1, (int)ceilf(v1x)), max(1, (int)ceilf(v2y)),
+			0, 0, (int)bmp->GetWidth(), (int)bmp->GetHeight());
+	}
+
+	return DrawImageWarp(bmp, wpts, 0, 0, (int)bmp->GetWidth(), (int)bmp->GetHeight());
+}
+
+Status Graphics::DrawImageWarp(Bitmap *bmp, const PointF *pts, int srcX, int srcY, int srcW, int srcH)
+{
+	if (NULL == m_pCanvas || NULL == bmp || NULL == pts) return InvalidParameter;
+	if (srcW <= 0 || srcH <= 0) return InvalidParameter;
+
+	const int nBmpSrcW = (int)bmp->GetWidth();
+	const int nBmpSrcH = (int)bmp->GetHeight();
+	if (nBmpSrcW <= 0 || nBmpSrcH <= 0) return InvalidParameter;
+
+	const float x0 = pts[0].X;
+	const float y0 = pts[0].Y;
+	const float v1x = pts[1].X - x0;
+	const float v1y = pts[1].Y - y0;
+	const float v2x = pts[2].X - x0;
+	const float v2y = pts[2].Y - y0;
+	const float fDet = v1x * v2y - v1y * v2x;
+	if (fabsf(fDet) < 0.0001f) return InvalidParameter;
+
+	const float x3 = pts[1].X + v2x;
+	const float y3 = pts[1].Y + v2y;
+	const float fMinX = min(min(x0, pts[1].X), min(pts[2].X, x3));
+	const float fMinY = min(min(y0, pts[1].Y), min(pts[2].Y, y3));
+	const float fMaxX = max(max(x0, pts[1].X), max(pts[2].X, x3));
+	const float fMaxY = max(max(y0, pts[1].Y), max(pts[2].Y, y3));
+	const int nLeft = (int)floorf(fMinX);
+	const int nTop = (int)floorf(fMinY);
+	const int nBmpW = (int)ceilf(fMaxX) - nLeft;
+	const int nBmpH = (int)ceilf(fMaxY) - nTop;
+	if (nBmpW <= 0 || nBmpH <= 0) return InvalidParameter;
+
+	BitmapData srcData = {};
+	Rect rcSrc(0, 0, nBmpSrcW, nBmpSrcH);
+	if (Ok != bmp->LockBits(&rcSrc, ImageLockModeRead, PixelFormat32bppPARGB, &srcData) || NULL == srcData.Scan0)
+	{
+		return GenericError;
+	}
+
+	Bitmap bmpWarp(nBmpW, nBmpH, PixelFormat32bppPARGB);
+	BitmapData dstData = {};
+	Rect rcDstLock(0, 0, nBmpW, nBmpH);
+	if (Ok != bmpWarp.GetLastStatus()
+		|| Ok != bmpWarp.LockBits(&rcDstLock, ImageLockModeWrite, PixelFormat32bppPARGB, &dstData)
+		|| NULL == dstData.Scan0)
+	{
+		if (NULL != dstData.Scan0) bmpWarp.UnlockBits(&dstData);
+		bmp->UnlockBits(&srcData);
+		return GenericError;
+	}
+
+	const float fInvDet = 1.0f / fDet;
+	const BYTE *pSrc = (const BYTE *)srcData.Scan0;
+	for (int y = 0; y < nBmpH; ++y)
+	{
+		BYTE *pRow = (BYTE *)dstData.Scan0 + y * dstData.Stride;
+		const float dy = (nTop + y + 0.5f) - y0;
+		for (int x = 0; x < nBmpW; ++x)
+		{
+			const float dx = (nLeft + x + 0.5f) - x0;
+			float s = (dx * v2y - dy * v2x) * fInvDet;
+			float t = (v1x * dy - v1y * dx) * fInvDet;
+			BYTE cbPixel[4] = {};
+			if (s >= 0.0f && t >= 0.0f && s <= 1.0f && t <= 1.0f)
+			{
+				if (s >= 1.0f) s = 0.9999f;
+				if (t >= 1.0f) t = 0.9999f;
+				DuiSamplePremul(pSrc, srcData.Stride, nBmpSrcW, nBmpSrcH,
+					(float)srcX + s * (float)srcW, (float)srcY + t * (float)srcH, cbPixel);
+			}
+			BYTE *pDst = pRow + x * 4;
+			pDst[0] = cbPixel[0];
+			pDst[1] = cbPixel[1];
+			pDst[2] = cbPixel[2];
+			pDst[3] = cbPixel[3];
+		}
+	}
+
+	bmpWarp.UnlockBits(&dstData);
+	bmp->UnlockBits(&srcData);
+
+	return BlitBitmap(&bmpWarp, nLeft, nTop, nBmpW, nBmpH, 0, 0, nBmpW, nBmpH);
 }
 
 Status Graphics::MeasureString(const WCHAR *str, INT len, const Font *font, const RectF &layout, const StringFormat *fmt, RectF *boundingBox)

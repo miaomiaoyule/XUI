@@ -9,7 +9,6 @@
 #define Dui_FolderConfig					_T("Config")
 #define Dui_FolderControlIcon				_T("Config\\CtrlIcon")
 #define Dui_FolderCtrlAuthorQuickMark		_T("Config\\CtrlAuthorQuickMark")
-#define Dui_FolderSkinDesign				_T("Config\\SkinDesign")
 #define Dui_FolderUIModel					_T("Config\\Model")
 #define Dui_FolderVSModel					_T("Config\\VSManager\\Model")
 #define Dui_FileDesignCtrl					_T("DesignCtrl.xml")

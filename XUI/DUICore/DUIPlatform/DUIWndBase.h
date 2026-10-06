@@ -81,6 +81,7 @@ protected:
 
 	//info
 	UINT										m_uTimerID = 0x1000;
+	POINT										m_ptMousePosPre;
 	POINT										m_ptMousePosLast;
 	POINT										m_ptMousePosDown;
 	DWORD										m_dwMouseDownTick = 0;

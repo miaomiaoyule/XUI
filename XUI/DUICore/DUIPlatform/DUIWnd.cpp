@@ -396,6 +396,7 @@ LRESULT CDUIWnd::OnMouseMove(WPARAM wParam, LPARAM lParam)
 		DuiMsg.ptMousePre = m_ptMousePosLast;
 		DuiMsg.ptMouse = pt;
 
+		m_ptMousePosPre = m_ptMousePosLast;
 		m_ptMousePosLast = pt;
 
 		//capture

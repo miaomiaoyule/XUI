@@ -419,8 +419,13 @@ LPVOID GlobalLock(HGLOBAL hMem)
 	return (LPVOID)hMem;
 }
 
-BOOL GlobalUnlock(HGLOBAL)
+BOOL GlobalUnlock(HGLOBAL hMem)
 {
+	if (hMem)
+	{
+		free(hMem)
+	}
+
 	return TRUE;
 }
 

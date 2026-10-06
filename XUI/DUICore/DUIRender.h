@@ -29,9 +29,10 @@ public:
 	//draw argb
 	static void DrawImage(HDC hDC, HBITMAP hBitmap, const CDUIRect &rcItem, const CDUIRect &rcPaint, const CDUIRect &rcBmpPart, const CDUIRect &rcCorner,
 		BYTE cbAlpha = 255, bool bAlpha = false, bool bCornerHole = false, bool bTiledX = false, bool bTiledY = false, const CDUIRect &rcRound = {}, enDuiRoundType RoundType = Round_Normal);
-	static void DrawImage(HDC hDC, Gdiplus::Bitmap *pBmp, const CDUIRect &rcItem, const CDUIRect &rcRound = {}, enDuiRoundType RoundType = Round_Normal);
 	static void DrawImage(HDC hDC, Gdiplus::Bitmap *pBmp, const CDUIRect &rcItem, const CDUIRect &rcPaint, const CDUIRect &rcBmpPart, const CDUIRect &rcCorner,
 		bool bCornerHole = false, bool bTiledX = false, bool bTiledY = false, const CDUIRect &rcRound = {}, enDuiRoundType RoundType = Round_Normal);
+	static void DrawImage(HDC hDC, Gdiplus::Bitmap *pBmp, const CDUIRect &rcItem, const CDUIRect &rcRound = {}, enDuiRoundType RoundType = Round_Normal);
+	static void DrawImage(HDC hDC, Gdiplus::Bitmap *pBmp, const CDUIRect &rcItem, Gdiplus::REAL fAngle);
 	static void DrawLine(HDC hDC, const CDUIRect &rcItem, int nLineSize, Gdiplus::ARGB dwPenColor, enDuiLineStyle LineStyle = LineStyle_Solid);
 	static void DrawRect(HDC hDC, const CDUIRect &rcItem, int nLineSize, Gdiplus::ARGB dwPenColor, CDUISize szBreakTop = {}, enDuiLineStyle LineStyle = LineStyle_Solid);
 	static void DrawPath(HDC hDC, const std::vector<CDUIPoint> &vecPtList, int nLineSize, Gdiplus::ARGB dwPenColor, enDuiLineStyle LineStyle = LineStyle_Solid);

@@ -435,7 +435,7 @@ void CDUIListItemCtrl::RemoveAll()
 
 bool CDUIListItemCtrl::InsertChildAtUser(CDUIControlBase *pChild, int nPos)
 {
-	return InsertChild(pChild, nPos + 2);
+	return InsertChild(pChild, -1 != nPos ? nPos + 2 : nPos);
 }
 
 bool CDUIListItemCtrl::RemoveAtUser(int nIndex)
@@ -485,6 +485,7 @@ void CDUIListItemCtrl::RefreshSubItem()
 			CDUIControlBase *pControl = GetChildAt(j++);
 			if (NULL == pControl 
 				|| false == pControl->IsVisible() 
+				|| pControl->IsFloat()
 				|| pControl == m_pCheckSelectCtrl) continue;
 
 			pSubItemCtrl = pControl;

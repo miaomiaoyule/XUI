@@ -135,6 +135,7 @@ typedef struct tagDuiNotify
 	UINT								uCtrlID = 0;
 	DWORD								dwTimestamp = 0;
 	POINT								ptMouse = {};
+	POINT								ptMousePre = {};
 	WORD								wKeyState = 0;
 	WPARAM								wParam = 0;
 	LPARAM								lParam = 0;

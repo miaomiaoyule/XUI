@@ -1265,8 +1265,6 @@ void CDUIContainerCtrl::InitComplete()
 {
 	__super::InitComplete();
 
-	DuiInitAttriVisible(m_AttributeGroupChild, false);
-
 	EnableScrollBar(IsUseHorizScrollBar(), IsUseVertScrollBar());
 
 	return;
