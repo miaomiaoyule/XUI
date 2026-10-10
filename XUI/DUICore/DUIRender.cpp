@@ -2091,8 +2091,13 @@ HBITMAP CDUIRenderEngine::GenerateBitmap(CDUIControlBase *pControl, const CDUIRe
 	HDC hDCPaint = ::CreateCompatibleDC(hDC);
 	LPBYTE pBmpBits = NULL;
 	HBITMAP hBmpPaint = CreateARGB32Bitmap(hDCPaint, rcItem.right, rcItem.bottom, &pBmpBits);
-	ASSERT(hDCPaint);
-	ASSERT(hBmpPaint);
+	if (NULL == hBmpPaint)
+	{
+		MMSafeDeleteDC(hDCPaint);
+		ReleaseDC(NULL, hDC);
+		return NULL;
+	}
+
 	HBITMAP hBmpOld = (HBITMAP)::SelectObject(hDCPaint, hBmpPaint);
 	pControl->OnDraw(hDCPaint, rcItem, true);
 	AdjustImage(hBmpPaint, dwFilterColor, 0);
@@ -2100,9 +2105,7 @@ HBITMAP CDUIRenderEngine::GenerateBitmap(CDUIControlBase *pControl, const CDUIRe
 	//copy control size bitmap
 	HDC hDCClone = ::CreateCompatibleDC(hDCPaint);
 	HBITMAP hBitmap = CreateARGB32Bitmap(hDCClone, rcItem.GetWidth(), rcItem.GetHeight(), &pBmpBits);
-	ASSERT(hDCClone);
-	ASSERT(hBitmap);
-	if (hBitmap != NULL)
+	if (hBitmap)
 	{
 		HBITMAP hOldBitmap = (HBITMAP)::SelectObject(hDCClone, hBitmap);
 		::BitBlt(hDCClone, 0, 0, rcItem.GetWidth(), rcItem.GetHeight(), hDCPaint, rcItem.left, rcItem.top, SRCCOPY);
