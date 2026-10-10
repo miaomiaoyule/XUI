@@ -23,7 +23,7 @@ class XUI_API CDUIControlBase
 	friend class CDUIListItemCtrl;
 	friend class CDUITabLayoutCtrl;
 	friend class CDUIRichEditCtrl;
-	friend class CDUIDragAnimation;
+	friend class CDUIAnimationDrag;
 	friend class CDUIGlobal;
 	friend class CDUIAttributePosition;
 	friend class CDUIAttributeColorSwitch;
@@ -112,6 +112,7 @@ protected:
 
 	//custom bk
 	Gdiplus::Bitmap *					m_pBmpCustomBack = NULL;
+	Gdiplus::Bitmap *					m_pBmpDragMoving = NULL;
 	WORD								m_wCustomBackAlign = 0;
 
 	//water
@@ -373,6 +374,8 @@ protected:
 	virtual CDUIScrollBarCtrl * GetHorizScrollBar() const { return NULL; }
 	virtual CDUIScrollBarCtrl * GetVertScrollBar() const { return NULL; }
 	virtual void PerformBorderSeparateHit(const CDUIPoint& pt);
+	virtual void OnDragMovePrepar();
+	virtual void OnDragMoveFinish();
 };
 
 XUI_API bool operator == (IDuiInterface *pLeft, const CDUIControlBase &pControl);

@@ -119,6 +119,10 @@ int CDUIVerticalLayoutCtrl::TranslateIndex(CDUIPoint pt)
 
 void CDUIVerticalLayoutCtrl::RefreshView()
 {
+	//animate draging
+	if (IsAnimateDraging()) return;
+
+	//refresh
 	RefreshScrollBar();
 
 	CDUISize szScrollPos = GetScrollPos();

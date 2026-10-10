@@ -259,6 +259,10 @@ void CDUIListViewCtrl::NeedRefreshView()
 
 void CDUIListViewCtrl::RefreshView()
 {
+	//animate draging
+	if (IsAnimateDraging()) return;
+
+	//refresh
 	enDuiListViewType ListViewType = GetListViewType();
 	if (ListView_List == ListViewType)
 	{

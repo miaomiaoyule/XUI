@@ -99,6 +99,10 @@ int CDUIHorizontalLayoutCtrl::TranslateIndex(CDUIPoint pt)
 
 void CDUIHorizontalLayoutCtrl::RefreshView()
 {
+	//animate draging
+	if (IsAnimateDraging()) return;
+
+	//refresh
 	RefreshScrollBar();
 
 	CDUISize szScrollPos = GetScrollPos();

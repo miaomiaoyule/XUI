@@ -245,6 +245,7 @@ void CDUIAnimationDrag::OnDragMoveBegin(CDUIControlBase *pDragCtrl)
 		CDUIControlBase *pChild = m_pBindContainerCtrl->GetChildAt(n);
 		if (NULL == pChild) continue;
 
+		pChild->OnDragMovePrepar();
 		m_vecDragPre.push_back(pChild->GetAbsoluteRect());
 
 		MMInterfaceHelper(CDUIListItemCtrl, pChild, pItem);
@@ -338,7 +339,16 @@ void CDUIAnimationDrag::OnDragMoveEnd(CDUIControlBase *pDragCtrl)
 	CDUIWndBase *pWndManager = m_pBindContainerCtrl->GetWndOwner();
 	if (NULL == pWndManager) return;
 
+	//finish
 	StopAnimation(Dui_TimerAnimate_ID);
+
+	for (int n = 0; n < GetChildCount(); n++)
+	{
+		CDUIControlBase *pChild = m_pBindContainerCtrl->GetChildAt(n);
+		if (NULL == pChild) continue;
+
+		pChild->OnDragMoveFinish();
+	}
 
 	//通知
 	pWndManager->SendNotify(m_pBindContainerCtrl, DuiNotify_DragAnimateFinish);

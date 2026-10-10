@@ -76,6 +76,7 @@ CDUIControlBase::~CDUIControlBase(void)
 	}
 
 	MMSafeDelete(m_pBmpCustomBack);
+	MMSafeDelete(m_pBmpDragMoving);
 
 	ReapControl();
 
@@ -1199,6 +1200,14 @@ bool CDUIControlBase::OnDraw(HDC hDC, const RECT &rcPaint, bool bGenerateBmp)
 	CDUIRenderClip Clip;
 	Clip.GenerateClip(hDC, m_rcPaint);
 
+	//animate draging
+	if (m_pBmpDragMoving)
+	{
+		CDUIRenderEngine::DrawImage(hDC, m_pBmpDragMoving, m_rcAbsolute);
+
+		return true;
+	}
+
 	DoPaint(hDC, bGenerateBmp);
 
 	//callback
@@ -2274,6 +2283,23 @@ void CDUIControlBase::PerformBorderSeparateHit(const CDUIPoint& pt)
 	{
 		m_cbSeparateStatus |= BorderSeparate_Bottom;
 	}
+
+	return;
+}
+
+void CDUIControlBase::OnDragMovePrepar()
+{
+	MMSafeDelete(m_pBmpDragMoving);
+	HBITMAP hBitmap = CDUIRenderEngine::GenerateBitmap(this, GetAbsoluteRect());
+	m_pBmpDragMoving = CDUIRenderEngine::GetAlphaBitmap(hBitmap);
+	MMSafeDeleteObject(hBitmap);
+
+	return;
+}
+
+void CDUIControlBase::OnDragMoveFinish()
+{
+	MMSafeDelete(m_pBmpDragMoving);
 
 	return;
 }
