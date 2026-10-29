@@ -125,6 +125,7 @@ bool CMMAsyncObject::UnInit()
 		}
 
 		::SetWindowLongPtr(m_hWndAsync, GWLP_USERDATA, NULL);
+		::SetWindowLongPtr(m_hWndAsync, GWLP_WNDPROC, (LONG_PTR)DefWindowProc);
 		PostMessage(WM_CLOSE, NULL, NULL);
 
 		MMUnregisterWnd(m_hWndAsync);
