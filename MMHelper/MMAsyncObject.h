@@ -44,18 +44,19 @@ public:
 	UINT GetWndID() override { return m_uWndID; };
 	HDC GetWndDC() override { return NULL; }
 	bool IsVirtualWnd() override { return 0 == m_uWndID && m_hWndAsync; }
-	bool IsWindowVisible() { return false; }
-	void SetWindowPos(HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags) {}
-	void ShowWindow(int nCmdShow) {}
-	void Invalidate() {}
-	HWND GetParent() { return NULL; }
-	CMMRect GetWindowRect() { return {}; }
-	CMMRect GetClientRect() { return {}; }
+	bool IsWindowVisible() override { return false; }
+	void SetWindowPos(HWND hWndInsertAfter, int X, int Y, int cx, int cy, UINT uFlags) override {}
+	void ShowWindow(int nCmdShow) override {}
+	void Invalidate() override {}
+	HWND GetParent() override { return NULL; }
+	CMMRect GetWindowRect() override { return {}; }
+	CMMRect GetClientRect() override { return {}; }
 
 public:
 	//you should call init and uninit on uithread
 	virtual bool Init();
 	virtual bool UnInit();
+	virtual HWND GetWndHandle() { return m_hWndAsync; }
 	virtual bool PostMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	virtual bool SendMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	virtual LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, bool &bHandled);
