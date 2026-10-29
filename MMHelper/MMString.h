@@ -108,7 +108,7 @@ inline std::string WStringToGbk(const std::wstring &src)
 	SDL_free(pszGbk);
 	return strOut;
 #else
-	return CT2CA(src.c_str());
+	return (LPCSTR)CT2CA(src.c_str());
 #endif
 }
 

@@ -2970,6 +2970,10 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeH()
 	bool bFindFirst = true;
 	bool bFindLast = true;
 	int nCurScrollRangeY = 0;
+	int nColumn = 0;
+	int nRow = 0;
+	int nLeftOffset = (IsLeftFromRange() ? 0 : GetChildPaddingH() / 2);
+	int nLeftFrom = rcItemRange.left + nLeftOffset;
 	m_nFirstShowIndex = m_nLastShowIndex = -1;
 	for (int n = 0, m = 0; n < GetChildCount(); n++)
 	{
@@ -2986,9 +2990,23 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeH()
 			continue;
 		}
 
+		//item.cx == 0
+		if (m_nWidthColumn == GetChildPaddingH())
+		{
+			if (nLeftFrom + pItem->GetFixedWidth() > rcItemRange.right && nLeftFrom > rcItemRange.left + nLeftOffset)
+			{
+				nLeftFrom = rcItemRange.left + nLeftOffset;
+				nColumn = 0;
+				nRow++;
+			}
+		}
+		else
+		{
+			nColumn = m % m_nColumn;
+			nRow = m / m_nColumn;
+		}
+
 		//item pos
-		int nColumn = m % m_nColumn;
-		int nRow = m / m_nColumn;
 		int nTopOffset = (IsTopFromRange() ? 0 : GetChildPaddingV() / 2);
 		int nTop = rcItemRange.top + nRow * m_nHeightRow + nTopOffset - szScrollPos.cy;
 		int nBottom = nTop + (pItem->GetFixedHeight() <= 0 ? m_nHeightRow - GetChildPaddingV() : pItem->GetFixedHeight());	
@@ -2996,11 +3014,24 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeH()
 		m++;
 
 		CDUIRect rcModal = rcItemRange;
-		int nLeftOffset = (IsLeftFromRange() ? 0 : GetChildPaddingH() / 2);
-		rcModal.left += nColumn * m_nWidthColumn + nLeftOffset;
-		rcModal.right = rcModal.left + m_nWidthColumn - GetChildPaddingH();
 		rcModal.top = nTop;
 		rcModal.bottom = nBottom;
+
+		//item.cx == 0
+		if (m_nWidthColumn == GetChildPaddingH())
+		{
+			rcModal.left = nLeftFrom;
+			rcModal.right = rcModal.left + pItem->GetFixedWidth();
+			nLeftFrom = rcModal.right + GetChildPaddingH();
+		}
+		else
+		{	
+			rcModal.left += nLeftOffset;
+			rcModal.left += nColumn * m_nWidthColumn;
+			rcModal.right = rcModal.left + m_nWidthColumn - GetChildPaddingH();
+			nLeftFrom = rcModal.right + GetChildPaddingH();
+		}
+		
 		pItem->OnDuiSize(rcModal);
 
 		CDUIRect rcItem = pItem->GetAbsoluteRect();
