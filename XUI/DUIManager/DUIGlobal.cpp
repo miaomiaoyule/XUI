@@ -3532,7 +3532,7 @@ void CDUIGlobal::UnRegisterWndNotify(IDuiWndNotify *pIDuiWndNotify)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-LPCTSTR DUI__TraceMsg(UINT uMsg)
+CMMString DUI__TraceMsg(UINT uMsg)
 {
 #define MSGDEF(x) if(uMsg==x) return _T(#x)
 	MSGDEF(WM_SETCURSOR);

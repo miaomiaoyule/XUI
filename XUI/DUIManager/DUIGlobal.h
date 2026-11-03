@@ -9,7 +9,7 @@ typedef std::map<UINT, CMMString> MapDuiControlID;
 typedef std::map<uint32_t, uint32_t> MapValueIDSwitch;
 
 //输出
-LPCTSTR XUI_API DUI__TraceMsg(UINT uMsg);
+CMMString XUI_API DUI__TraceMsg(UINT uMsg);
 
 //////////////////////////////////////////////////////////////////////////
 class CDTDesignerView;
