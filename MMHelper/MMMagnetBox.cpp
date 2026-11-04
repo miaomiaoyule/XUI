@@ -665,3 +665,110 @@ void CMMMagnetBox::VerifyBoxBottomDirection(int nIndex, CMMRect rcBoxItem, CMMRe
 
 	return;
 }
+
+//////////////////////////////////////////////////////////////////////////
+CMMRectPlace::CMMRectPlace()
+{
+
+}
+
+void CMMRectPlace::SetLimit(IN CMMRect rcLimit)
+{
+	m_rcLimit = rcLimit;
+
+	return;
+}
+
+void CMMRectPlace::PushRect(IN CMMRect rcRect)
+{
+	if (rcRect.GetWidth() <= 0 || rcRect.GetHeight() <= 0) return;
+
+	m_vecRect.push_back(rcRect);
+
+	return;
+}
+
+void CMMRectPlace::RemoveAll()
+{
+	m_vecRect.clear();
+
+	return;
+}
+
+bool CMMRectPlace::CalcPlace(IN CMMRect rcRect, OUT CMMRect &rcPlace)
+{
+	rcPlace.Clear();
+
+	const int nWidth = rcRect.GetWidth();
+	const int nHeight = rcRect.GetHeight();
+	if (nWidth <= 0 || nHeight <= 0) return false;
+	if (m_rcLimit.GetWidth() < nWidth || m_rcLimit.GetHeight() < nHeight) return false;
+
+	const long nXMin = m_rcLimit.left;
+	const long nXMax = m_rcLimit.right - nWidth;
+	const long nYMin = m_rcLimit.top;
+	const long nYMax = m_rcLimit.bottom - nHeight;
+
+	std::vector<long> vecX;
+	vecX.reserve(m_vecRect.size() * 2 + 2);
+	vecX.push_back(nXMin);
+	vecX.push_back(nXMax);
+	for (auto &rcItem : m_vecRect)
+	{
+		vecX.push_back(rcItem.right);
+		vecX.push_back(rcItem.left - nWidth);
+	}
+	std::sort(vecX.begin(), vecX.end(), [](long nLeft, long nRight) { return nLeft > nRight; });
+	vecX.erase(std::unique(vecX.begin(), vecX.end()), vecX.end());
+
+	struct tagSpan
+	{
+		long						nBegin = 0;
+		long						nEnd = 0;
+	};
+	for (long nX : vecX)
+	{
+		if (nX > nXMax) continue;
+		if (nX < nXMin) break;
+
+		const long nRight = nX + nWidth;
+		std::vector<tagSpan> vecSpan;
+		vecSpan.reserve(m_vecRect.size());
+		for (auto &rcItem : m_vecRect)
+		{
+			if (nX >= rcItem.right || nRight <= rcItem.left) continue;
+
+			tagSpan Span;
+			Span.nBegin = rcItem.top - nHeight + 1;
+			Span.nEnd = rcItem.bottom - 1;
+			if (Span.nBegin > Span.nEnd) continue;
+			if (Span.nEnd < nYMin || Span.nBegin > nYMax) continue;
+
+			vecSpan.push_back(Span);
+		}
+		std::sort(vecSpan.begin(), vecSpan.end(), [](const tagSpan &Left, const tagSpan &Right)
+		{
+			if (Left.nBegin != Right.nBegin) return Left.nBegin < Right.nBegin;
+
+			return Left.nEnd < Right.nEnd;
+		});
+
+		long nY = nYMin;
+		for (auto &Span : vecSpan)
+		{
+			if (nY > nYMax) break;
+			if (nY < Span.nBegin) break;
+			if (nY <= Span.nEnd) nY = Span.nEnd + 1;
+		}
+		if (nY > nYMax) continue;
+
+		rcPlace.left = nX;
+		rcPlace.top = nY;
+		rcPlace.right = nRight;
+		rcPlace.bottom = nY + nHeight;
+
+		return true;
+	}
+
+	return false;
+}

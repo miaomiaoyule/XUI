@@ -1829,6 +1829,10 @@ LRESULT CDUIWndBase::OnSize(WPARAM wParam, LPARAM lParam)
 {
 	ReleasePaintScene();
 
+	//must wnd client refresh, for minsize wnd root ctrl pos is null
+	Invalidate();
+
+	//root refresh
 	if (m_pRootCtrl)
 	{
 		m_pRootCtrl->NeedRefreshView();

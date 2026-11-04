@@ -51,7 +51,7 @@ protected:
 	int								m_nMagnetValue = 12;
 	bool							m_bBoxMovingX = false;
 	bool							m_bBoxMovingY = false;
-	CMMPoint							m_ptPullTotal = {};
+	CMMPoint						m_ptPullTotal = {};
 	CMMRect							m_rcPullTotal = {};
 
 public:
@@ -74,6 +74,24 @@ protected:
 	void VerifyBoxRightDirection(int nIndex, CMMRect rcBoxItem, CMMRect rcBox, int nBorderNearest, tagFindMagnetBox &FindMagnetBox);
 	void VerifyBoxTopDirection(int nIndex, CMMRect rcBoxItem, CMMRect rcBox, int nBorderNearest, tagFindMagnetBox &FindMagnetBox);
 	void VerifyBoxBottomDirection(int nIndex, CMMRect rcBoxItem, CMMRect rcBox, int nBorderNearest, tagFindMagnetBox &FindMagnetBox);
+};
+
+//////////////////////////////////////////////////////////////////////////
+class MMHELPER_API CMMRectPlace
+{
+public:
+	CMMRectPlace();
+	virtual ~CMMRectPlace() {}
+
+protected:
+	CMMRect							m_rcLimit;
+	std::vector<CMMRect>			m_vecRect;
+
+public:
+	void SetLimit(IN CMMRect rcLimit);
+	void PushRect(IN CMMRect rcRect);
+	void RemoveAll();
+	bool CalcPlace(IN CMMRect rcRect, OUT CMMRect &rcPlace);
 };
 
 //////////////////////////////////////////////////////////////////////////
