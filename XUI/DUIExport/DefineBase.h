@@ -63,11 +63,7 @@ class CDUICalendarCtrl;
 #define ASSERT(expr)  _ASSERTE(expr)
 #endif
 
-#ifdef _DEBUG
 #define DUITRACEMSG DUI__TraceMsg
-#else
-#define DUITRACEMSG _T("")
-#endif
 
 /////////////////////////////////////////////////////////////////////////////////////
 //Flags for CDUIControlBase::GetControlFlags()
