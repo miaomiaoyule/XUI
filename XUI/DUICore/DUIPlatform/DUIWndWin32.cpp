@@ -510,19 +510,15 @@ void CDUIWndWin32::CenterWindow()
 	::GetWindowRect(m_hWnd, &rcDlg);
 	RECT rcArea = {};
 	RECT rcCenter = {};
-	HWND hWnd = *this;
-	HWND hWndParent = ::GetParent(m_hWnd);
 	HWND hWndCenter = ::GetWindowOwner(m_hWnd);
-	if (hWndCenter != NULL)
-		hWnd = hWndCenter;
 
 	// 处理多显示器模式下屏幕居中
 	MONITORINFO oMonitor = {};
 	oMonitor.cbSize = sizeof(oMonitor);
-	::GetMonitorInfo(::MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST), &oMonitor);
+	::GetMonitorInfo(::MonitorFromWindow(hWndCenter, MONITOR_DEFAULTTOPRIMARY), &oMonitor);
 	rcArea = oMonitor.rcWork;
 
-	if (hWndCenter == NULL)
+	if (hWndCenter == NULL || ::IsIconic(hWndCenter))
 		rcCenter = rcArea;
 	else
 		::GetWindowRect(hWndCenter, &rcCenter);

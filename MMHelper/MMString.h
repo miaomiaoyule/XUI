@@ -614,6 +614,12 @@ public:
 
 		return *this;
 	}
+	CMMStringW & append(const CMMStringW & strRight)
+	{	
+		operator += (strRight);
+
+		return *this;
+	}
 	bool empty() const
 	{
 		return (length() > 0 && _T('\0') == at(0)) || __super::empty();
@@ -671,6 +677,12 @@ public:
 		if (NULL == lpszRight) return *this;
 
 		__super::operator = (lpszRight);
+
+		return *this;
+	}
+	CMMStringW & operator += (const CMMStringW &strRight)
+	{
+		__super::operator += (strRight.c_str());
 
 		return *this;
 	}
