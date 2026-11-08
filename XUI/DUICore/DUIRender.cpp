@@ -1899,6 +1899,17 @@ void CDUIRenderEngine::DrawRichText(HDC hDC, CDUIRect &rcItem, const MapLineVecD
 
 							break;
 						}
+						case AnimateImage_Webp:
+						{
+							tagDuiImageInfo ImageInfo = pImageBase->GetImageInfo();
+							if (RichTextDrawItem.nAnimateFrameCur >= 0
+								&& RichTextDrawItem.nAnimateFrameCur < (int)ImageInfo.vecImageWebp.size())
+							{
+								CDUIRenderEngine::DrawImage(hDC, ImageInfo.vecImageWebp[RichTextDrawItem.nAnimateFrameCur], RichTextDrawItem.rcDraw);
+							}
+
+							break;
+						}
 						default:
 						{
 							CDUIRect rcBmpPart(0, 0, pImageBase->GetWidth(), pImageBase->GetHeight());

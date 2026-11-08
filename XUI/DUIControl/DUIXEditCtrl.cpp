@@ -173,10 +173,13 @@ void CDUIXEditCtrl::RefreshView()
 			if (RichTextItem_Image != RichTextDrawItem.ItemType) continue;
 
 			CDUIImageBase *pImageBase = CDUIGlobal::GetInstance()->GetImageResource(RichTextDrawItem.strImageResName);
-			if (NULL == pImageBase || NULL == pImageBase->GetAnimateImage(GetScale())) continue;
+			if (NULL == pImageBase) continue;
 
 			auto AnimateImageInfo = pImageBase->GetAnimateImageInfo(GetScale());
-			if (RichTextDrawItem.nAnimateFrameCur < 0 || RichTextDrawItem.nAnimateFrameCur >= AnimateImageInfo.nFrameCount) continue;
+			if (AnimateImage_None == AnimateImageInfo.AnimateImageType) continue;
+			if (RichTextDrawItem.nAnimateFrameCur < 0
+				|| RichTextDrawItem.nAnimateFrameCur >= AnimateImageInfo.nFrameCount
+				|| RichTextDrawItem.nAnimateFrameCur >= (int)AnimateImageInfo.vecFrameElapse.size()) continue;
 
 			RichTextDrawItem.nAnimateElapseCur = AnimateImageInfo.vecFrameElapse[RichTextDrawItem.nAnimateFrameCur];
 
@@ -1295,10 +1298,12 @@ void CDUIXEditCtrl::OnDuiTimer(UINT uTimerID, const DuiMessage &Msg)
 				if (RichTextItem_Image != RichTextDrawItem.ItemType) continue;
 
 				CDUIImageBase *pImageBase = CDUIGlobal::GetInstance()->GetImageResource(RichTextDrawItem.strImageResName);
-				if (NULL == pImageBase || NULL == pImageBase->GetAnimateImage(GetScale())) continue;
+				if (NULL == pImageBase) continue;
 
 				auto AnimateImageInfo = pImageBase->GetAnimateImageInfo(GetScale());
-				if (AnimateImageInfo.nFrameCount <= 0) continue;
+				if (AnimateImage_None == AnimateImageInfo.AnimateImageType
+					|| AnimateImageInfo.nFrameCount <= 0
+					|| RichTextDrawItem.nAnimateFrameCur >= (int)AnimateImageInfo.vecFrameElapse.size()) continue;
 
 				RichTextDrawItem.nAnimateElapseCur -= Dui_TimerXEditAnimate_Elapse;
 				if (RichTextDrawItem.nAnimateElapseCur <= 0)

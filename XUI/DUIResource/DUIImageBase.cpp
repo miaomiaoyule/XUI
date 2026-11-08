@@ -450,9 +450,6 @@ bool CDUIImageBase::ConstructWebp(std::vector<BYTE> &vecData, int nScale)
 		int duration = timestamp - prev_timestamp;
 		prev_timestamp = timestamp;
 
-		ImageInfo.nFrameCount++;
-		ImageInfo.vecFrameElapse.push_back(duration);
-
 		LPBYTE pDest = NULL;
 		HBITMAP hBitmap = CDUIRenderEngine::CreateARGB32Bitmap(NULL, ImageInfo.nWidth, ImageInfo.nHeight, &pDest);
 		if (hBitmap && pDest)
@@ -488,7 +485,15 @@ bool CDUIImageBase::ConstructWebp(std::vector<BYTE> &vecData, int nScale)
 				}
 			}
 
-			ImageInfo.vecImageWebp.push_back(CDUIRenderEngine::GetAlphaBitmap(hBitmap));
+			//frame count / elapse only count when frame bitmap is ready,
+			//keep vecImageWebp / nFrameCount / vecFrameElapse aligned
+			Gdiplus::Bitmap *pBmpFrame = CDUIRenderEngine::GetAlphaBitmap(hBitmap);
+			if (pBmpFrame)
+			{
+				ImageInfo.vecImageWebp.push_back(pBmpFrame);
+				ImageInfo.nFrameCount++;
+				ImageInfo.vecFrameElapse.push_back((WORD)duration);
+			}
 
 			if (NULL == ImageInfo.hBitmap)
 			{
@@ -498,7 +503,7 @@ bool CDUIImageBase::ConstructWebp(std::vector<BYTE> &vecData, int nScale)
 					memcpy(ImageInfo.pBits, pDest, dataSize);
 				}
 			}
-	
+
 			MMSafeDeleteObject(hBitmap);
 		}
 	}

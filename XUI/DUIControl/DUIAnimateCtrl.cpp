@@ -290,6 +290,7 @@ void CDUIAnimateCtrl::PlayCurFrame()
 {
 	if (m_AnimateImageInfo.nFrameCount <= 0
 		|| (AnimateImage_Gif == m_AnimateImageInfo.AnimateImageType && m_AnimateImageInfo.vecFrameElapse.size() <= 0)
+		|| (AnimateImage_Webp == m_AnimateImageInfo.AnimateImageType && m_AnimateImageInfo.vecFrameElapse.size() <= 0)
 		|| (AnimateImage_SequenceFrame == m_AnimateImageInfo.AnimateImageType && m_AnimateImageInfo.nSequenceFrameSpeed <= 0)
 		|| NULL == m_pWndOwner) return;
 
@@ -299,6 +300,15 @@ void CDUIAnimateCtrl::PlayCurFrame()
 		case AnimateImage_Gif:
 		{
 			nElapse = m_AnimateImageInfo.vecFrameElapse[m_nFrameCur];
+
+			break;
+		}
+		case AnimateImage_Webp:
+		{
+			if (m_nFrameCur < (int)m_AnimateImageInfo.vecFrameElapse.size())
+			{
+				nElapse = m_AnimateImageInfo.vecFrameElapse[m_nFrameCur];
+			}
 
 			break;
 		}
