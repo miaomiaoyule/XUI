@@ -1394,7 +1394,7 @@ void CDUIWndWin32::ForegroundWindow(HWND hWnd)
 	HWND hWndForground = GetForegroundWindow();
 	DWORD dwThreadIDForground = ::GetWindowThreadProcessId(hWndForground, NULL);
 	DWORD dwThreadIDCur = ::GetCurrentThreadId();
-	if (dwThreadIDForground == dwThreadIDCur || hWndForground == hWnd) return;
+	if (hWndForground == hWnd) return;
 
 	::AttachThreadInput(dwThreadIDCur, dwThreadIDForground, TRUE);
 	::SetActiveWindow(hWnd);
