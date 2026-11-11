@@ -794,7 +794,7 @@ LRESULT CDUIWndSDL::OnPaint(CDUIRect rcPaint)
 	if (IsAnimatingWnd()) return lRes;
 
 	//Should we paint?
-	CDUIRect rcClient = GetClientRect();
+	CDUIRect rcClient = m_rcBmpBackground;
 	if (false == ::IntersectRect(&rcPaint, &rcPaint, &rcClient)) return lRes;
 	if (rcPaint.Empty()) return lRes;
 
@@ -914,6 +914,8 @@ void CDUIWndSDL::EnsurePaintScene()
 		m_hDCPaint = m_pPaintScene->GetCanvasHDC();
 		m_hMemDcBackground = m_hDCPaint;
 		m_pBmpBackgroundBits = m_pPaintScene->GetBits();
+		m_rcBmpBackground = { 0,0,m_pPaintScene->GetWidth(),m_pPaintScene->GetHeight() };
+
 		return;
 	}
 
@@ -922,6 +924,7 @@ void CDUIWndSDL::EnsurePaintScene()
 	m_hDCPaint = m_pPaintScene->GetCanvasHDC();
 	m_hMemDcBackground = m_hDCPaint;
 	m_pBmpBackgroundBits = m_pPaintScene->GetBits();
+	m_rcBmpBackground = { 0,0,m_pPaintScene->GetWidth(),m_pPaintScene->GetHeight() };
 
 	return;
 }

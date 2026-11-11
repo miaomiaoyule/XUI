@@ -72,6 +72,7 @@ protected:
 	HBITMAP										m_hBmpBackgroundOld = NULL;
 	HBITMAP										m_hBmpBackground = NULL;
 	LPBYTE										m_pBmpBackgroundBits = NULL;
+	CDUIRect									m_rcBmpBackground;
 
 	//tip
 	HWND										m_hWndTooltip = NULL;

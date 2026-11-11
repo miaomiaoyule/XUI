@@ -1131,7 +1131,7 @@ LRESULT CDUIWndWin32::OnPaint(CDUIRect rcPaint)
 	dwStyle = ::GetWindowLong(m_hWnd, GWL_EXSTYLE);
 
 	//Should we paint?
-	CDUIRect rcClient = GetClientRect();
+	CDUIRect rcClient = m_rcBmpBackground;
 	if (false == ::IntersectRect(&rcPaint, &rcPaint, &rcClient)) return lRes;
 	if (NULL == m_pRootCtrl || rcPaint.Empty()) return lRes;
 
@@ -1248,9 +1248,9 @@ void CDUIWndWin32::EnsurePaintScene()
 {
 	if (m_hMemDcBackground || NULL == m_hDCPaint) return;
 
-	CDUIRect rcClient = GetClientRect();
+	m_rcBmpBackground = GetClientRect();
 	m_hMemDcBackground = ::CreateCompatibleDC(m_hDCPaint);
-	m_hBmpBackground = CDUIRenderEngine::CreateARGB32Bitmap(m_hDCPaint, rcClient.GetWidth(), rcClient.GetHeight(), &m_pBmpBackgroundBits);
+	m_hBmpBackground = CDUIRenderEngine::CreateARGB32Bitmap(m_hDCPaint, m_rcBmpBackground.GetWidth(), m_rcBmpBackground.GetHeight(), &m_pBmpBackgroundBits);
 
 	if (m_hMemDcBackground && m_hBmpBackground && m_pBmpBackgroundBits)
 	{
