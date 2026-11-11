@@ -794,7 +794,7 @@ LRESULT CDUIWndSDL::OnPaint(CDUIRect rcPaint)
 	if (IsAnimatingWnd()) return lRes;
 
 	//Should we paint?
-	CDUIRect rcClient = m_rcBmpBackground;
+	CDUIRect rcClient = m_pBmpBackgroundBits ? m_rcBmpBackground : GetClientRect();
 	if (false == ::IntersectRect(&rcPaint, &rcPaint, &rcClient)) return lRes;
 	if (rcPaint.Empty()) return lRes;
 

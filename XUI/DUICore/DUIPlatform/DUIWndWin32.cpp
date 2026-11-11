@@ -1131,7 +1131,7 @@ LRESULT CDUIWndWin32::OnPaint(CDUIRect rcPaint)
 	dwStyle = ::GetWindowLong(m_hWnd, GWL_EXSTYLE);
 
 	//Should we paint?
-	CDUIRect rcClient = m_rcBmpBackground;
+	CDUIRect rcClient = m_pBmpBackgroundBits ? m_rcBmpBackground : GetClientRect();
 	if (false == ::IntersectRect(&rcPaint, &rcPaint, &rcClient)) return lRes;
 	if (NULL == m_pRootCtrl || rcPaint.Empty()) return lRes;
 
