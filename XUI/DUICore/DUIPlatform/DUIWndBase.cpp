@@ -371,7 +371,7 @@ void CDUIWndBase::ReapControl(CDUIControlBase *pControl)
 
 	KillTimer(pControl);
 
-	for (int i = m_queAsynNotify.size() - 1; i >= 0; i--)
+	for (int i = (int)m_queAsynNotify.size() - 1; i >= 0; i--)
 	{
 		DuiNotify &Notify = m_queAsynNotify[i];
 		if (Notify.pNotifyCtrl == pControl
@@ -382,7 +382,7 @@ void CDUIWndBase::ReapControl(CDUIControlBase *pControl)
 			Notify = {};
 		}
 	}
-	for (int i = m_queSyncNotify.size() - 1; i >= 0; i--)
+	for (int i = (int)m_queSyncNotify.size() - 1; i >= 0; i--)
 	{
 		DuiNotify &Notify = m_queSyncNotify[i];
 		if (Notify.pNotifyCtrl == pControl
