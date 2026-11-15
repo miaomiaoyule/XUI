@@ -113,9 +113,10 @@ protected:
 	tagDuiDropData								m_DropData;
 
 	VecIDuiNotify								m_vecINotify;
-	VecDuiNotify								m_vecAsynNotify;
 	VecDuiTimerInfo								m_vecTimers;
 	DuiTimerStore								m_TimerStore;
+	DequeDuiNotify								m_queAsynNotify;
+	DequeDuiNotify								m_queSyncNotify;
 	DequeDuiControlBase							m_queDelayDelete;
 	VecDuiControlBase							m_vecFoundControls;
 	MapDuiControlBase							m_mapControl;

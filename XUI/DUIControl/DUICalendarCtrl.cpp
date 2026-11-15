@@ -800,6 +800,25 @@ CMMString CDUICalendarCtrl::GetWeekText(int nWeekDay)
 	return nWeekDay < MMCountArray(m_AttributeTextWeekDay) ? m_AttributeTextWeekDay[nWeekDay].GetValue() : _T("");
 }
 
+void CDUICalendarCtrl::RegisterConstructDayCallback(OnConstructDay pOnConstructDay)
+{
+	if (find(m_vecConstructDayCallBack.begin(), m_vecConstructDayCallBack.end(), pOnConstructDay) != m_vecConstructDayCallBack.end()) return;
+
+	m_vecConstructDayCallBack.push_back(pOnConstructDay);
+
+	return;
+}
+
+void CDUICalendarCtrl::UnRegisterConstructDayCallback(OnConstructDay pOnConstructDay)
+{
+	auto FindIt = find(m_vecConstructDayCallBack.begin(), m_vecConstructDayCallBack.end(), pOnConstructDay);
+	if (FindIt == m_vecConstructDayCallBack.end()) return;
+
+	m_vecConstructDayCallBack.erase(FindIt);
+
+	return;
+}
+
 bool CDUICalendarCtrl::InsertChild(CDUIControlBase *pChild, int nPos)
 {
 	return false;
@@ -1137,8 +1156,11 @@ void CDUICalendarCtrl::InitCtrlInfo()
 		m_pListDayCtrl1->SwitchListViewType(ListView_TileH);
 		m_pListDayCtrl1->SetItemStatusColorResSwitchHot(m_AttributeColorHotDayBk.GetColorResSwitch());
 		m_pListDayCtrl1->SetItemStatusColorResSwitchSelNormal(m_AttributeColorSelDayBk.GetColorResSwitch());
+		m_pListDayCtrl1->SetItemStatusColorResSwitchSelHot(m_AttributeColorSelDayBk.GetColorResSwitch());
 		m_pListDayCtrl1->SetItemStatusImageSectionHot(m_AttributeImageHotDayBk.GetImageSection());
 		m_pListDayCtrl1->SetItemStatusImageSectionSelNormal(m_AttributeImageSelDayBk.GetImageSection());
+		m_pListDayCtrl1->SetItemStatusImageSectionSelHot(m_AttributeImageSelDayBk.GetImageSection());
+		m_pListDayCtrl1->SetItemTextStyleNormal(m_AttributeTextStyleCurMonthDay.GetTextStyle());
 		m_pListDayCtrl1->SetItemTextStyleHot(m_AttributeTextStyleHotMonthDay.GetTextStyle());
 		m_pListDayCtrl1->SetItemTextStyleSelHot(m_AttributeTextStyleHotMonthDay.GetTextStyle());
 		m_pListDayCtrl1->SetAutoCalcItemWidth(true);
@@ -1158,8 +1180,11 @@ void CDUICalendarCtrl::InitCtrlInfo()
 		m_pListDayCtrl2->SwitchListViewType(ListView_TileH);
 		m_pListDayCtrl2->SetItemStatusColorResSwitchHot(m_AttributeColorHotDayBk.GetColorResSwitch());
 		m_pListDayCtrl2->SetItemStatusColorResSwitchSelNormal(m_AttributeColorSelDayBk.GetColorResSwitch());
+		m_pListDayCtrl2->SetItemStatusColorResSwitchSelHot(m_AttributeColorSelDayBk.GetColorResSwitch());
 		m_pListDayCtrl2->SetItemStatusImageSectionHot(m_AttributeImageHotDayBk.GetImageSection());
 		m_pListDayCtrl2->SetItemStatusImageSectionSelNormal(m_AttributeImageSelDayBk.GetImageSection());
+		m_pListDayCtrl2->SetItemStatusImageSectionSelHot(m_AttributeImageSelDayBk.GetImageSection());
+		m_pListDayCtrl2->SetItemTextStyleNormal(m_AttributeTextStyleCurMonthDay.GetTextStyle());
 		m_pListDayCtrl2->SetItemTextStyleHot(m_AttributeTextStyleHotMonthDay.GetTextStyle());
 		m_pListDayCtrl2->SetItemTextStyleSelHot(m_AttributeTextStyleHotMonthDay.GetTextStyle());
 		m_pListDayCtrl2->SetAutoCalcItemWidth(true);
@@ -1241,15 +1266,27 @@ void CDUICalendarCtrl::ConstructDay(CDUIListItemCtrl *pDay, int nYear, int nMont
 	bool bCurMonth = (LocalTime.wYear == nYear && LocalTime.wMonth == nMonth);
 	bool bCurDay = bCurMonth && (LocalTime.wDay == nDay);
 
-	CDUIAttributeTextStyle *pAttributeTextStyle = &m_AttributeTextStyleOtherMonthDay;
-	bCurMonth ? pAttributeTextStyle = &m_AttributeTextStyleCurMonthDay : pAttributeTextStyle;
-	bCurDay ? pAttributeTextStyle = &m_AttributeTextStyleToday : pAttributeTextStyle;
-
-	if (bCurDay) pDay->SetBkColor(m_AttributeColorTodayBk.GetColorResSwitch());
-	pDay->SetTextStyle(pAttributeTextStyle->GetTextStyle());
+	if (false == bCurMonth)
+	{
+		pDay->SetTextStyle(m_AttributeTextStyleOtherMonthDay.GetTextStyle());
+	}
+	if (bCurDay)
+	{
+		pDay->SetTextStyle(m_AttributeTextStyleToday.GetTextStyle());
+		pDay->SetBkColor(m_AttributeColorTodayBk.GetColorResSwitch());
+		pDay->SetBkImageSection(m_AttributeImageTodayBk.GetImageSection());
+	}
 	pDay->SetText(CMMStrHelp::Format(_T("%d"), nDay));
 	pDay->SetTag(ConstructDate(nYear, nMonth, nDay));
 	pDay->EnableScrollBar(false, false);
+
+	//callback
+	for (auto pOnConstructDay : m_vecConstructDayCallBack)
+	{
+		if (NULL == pOnConstructDay) continue;
+
+		pOnConstructDay(pDay, nYear, nMonth, nDay);
+	}
 
 	return;
 }

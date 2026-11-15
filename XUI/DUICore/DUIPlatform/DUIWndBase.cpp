@@ -322,7 +322,8 @@ CDUIContainerCtrl * CDUIWndBase::DetachRootCtrl()
 
 	m_vecMouseEnterCtrl.clear();
 	m_mapControl.clear();
-	m_vecAsynNotify.clear();
+	m_queAsynNotify.clear();
+	m_queSyncNotify.clear();
 	RemoveAllRadioBoxGroup();
 	RemoveAllTimer();
 
@@ -370,15 +371,26 @@ void CDUIWndBase::ReapControl(CDUIControlBase *pControl)
 
 	KillTimer(pControl);
 
-	for (int i = m_vecAsynNotify.size() - 1; i >= 0; i--)
+	for (int i = m_queAsynNotify.size() - 1; i >= 0; i--)
 	{
-		DuiNotify &Notify = m_vecAsynNotify[i];
+		DuiNotify &Notify = m_queAsynNotify[i];
 		if (Notify.pNotifyCtrl == pControl
 			|| Notify.DuiNotifyExtend.TreeView.pTreeNode == pControl
 			|| Notify.DuiNotifyExtend.TreeView.pRootNode == pControl
 			|| Notify.DuiNotifyExtend.TreeView.pRootView == pControl)
 		{
-			m_vecAsynNotify.erase(m_vecAsynNotify.begin() + i);
+			Notify = {};
+		}
+	}
+	for (int i = m_queSyncNotify.size() - 1; i >= 0; i--)
+	{
+		DuiNotify &Notify = m_queSyncNotify[i];
+		if (Notify.pNotifyCtrl == pControl
+			|| Notify.DuiNotifyExtend.TreeView.pTreeNode == pControl
+			|| Notify.DuiNotifyExtend.TreeView.pRootNode == pControl
+			|| Notify.DuiNotifyExtend.TreeView.pRootView == pControl)
+		{
+			Notify = {};
 		}
 	}
 
@@ -1037,31 +1049,41 @@ void CDUIWndBase::SendNotify(DuiNotify &Notify)
 {
 	if (NULL == Notify.pNotifyCtrl) return;
 
-	CDUIWndBase *pWnd = Notify.pNotifyCtrl->GetWndOwner();
-	if (NULL == pWnd) return;
-
 	Notify.uCtrlID = Notify.pNotifyCtrl->GetCtrlID();
 	Notify.ptMouse = m_ptMousePosLast;
 	Notify.ptMousePre = m_ptMousePosPre;
 	Notify.wKeyState = MapWndKeyState();
 	Notify.dwTimestamp = ::GetTickCount();
-
-	int nCount = Notify.pNotifyCtrl->GetControlCallBackCount();
-	for (int n = 0; n < nCount; n++)
+	
+	m_queSyncNotify.push_back(Notify);
+	const size_t uSelf = m_queSyncNotify.size() - 1;
+	DuiNotify &NotifyDispatch = m_queSyncNotify.back();
+	for (int n = 0; ; n++)
 	{
-		if (false == pWnd->VerifyControl(Notify.pNotifyCtrl)) return;
+		//for other callback release and reap control
+		if (NULL == NotifyDispatch.pNotifyCtrl) break;
 
-		IDuiControlCallBack *pICallBack = Notify.pNotifyCtrl->GetControlCallBack(n);
+		if (n >= NotifyDispatch.pNotifyCtrl->GetControlCallBackCount()) break;
+		IDuiControlCallBack *pICallBack = NotifyDispatch.pNotifyCtrl->GetControlCallBack(n);
 		if (NULL == pICallBack) continue;
 
-		pICallBack->OnNotify(Notify.pNotifyCtrl, Notify);
+		pICallBack->OnNotify(NotifyDispatch.pNotifyCtrl, NotifyDispatch);
 	}
 	for (int n = 0; n < m_vecINotify.size(); n++)
 	{
 		IDuiNotify *pINotify = m_vecINotify[n];
 		if (NULL == pINotify) continue;
 
-		pINotify->OnNotify(Notify);
+		//for other callback release and reap control
+		if (NULL == NotifyDispatch.pNotifyCtrl) break;
+
+		pINotify->OnNotify(NotifyDispatch);
+	}
+
+	//remove
+	if (uSelf < m_queSyncNotify.size())
+	{
+		m_queSyncNotify.erase(m_queSyncNotify.begin() + uSelf);
 	}
 
 	return;
@@ -1089,7 +1111,7 @@ void CDUIWndBase::PostNotify(DuiNotify &Notify)
 	Notify.ptMousePre = m_ptMousePosPre;
 	Notify.wKeyState = MapWndKeyState();
 	Notify.dwTimestamp = ::GetTickCount();
-	m_vecAsynNotify.push_back(Notify);
+	m_queAsynNotify.push_back(Notify);
 
 	PostAppMsg();
 
@@ -2312,34 +2334,35 @@ void CDUIWndBase::DelayDelete(CDUIControlBase *pControl)
 
 void CDUIWndBase::DispatchNotifyAsyn()
 {
-	VecDuiNotify vecAsynNotify = m_vecAsynNotify;
-	m_vecAsynNotify.clear();
-
-	for (auto &Notify : vecAsynNotify)
+	for (int n = 0; n < m_queAsynNotify.size(); n++)
 	{
-		if (NULL == Notify.pNotifyCtrl) continue;
+		auto &NotifyDispatch = m_queAsynNotify[n];
+		if (NULL == NotifyDispatch.pNotifyCtrl) continue;
 
-		CDUIWndBase *pWnd = Notify.pNotifyCtrl->GetWndOwner();
-		if (NULL == pWnd) continue;
-
-		int nCount = Notify.pNotifyCtrl->GetControlCallBackCount();
-		for (int n = 0; n < nCount; n++)
+		for (int i = 0; ; i++)
 		{
-			if (false == pWnd->VerifyControl(Notify.pNotifyCtrl)) break;
+			//for other callback release and reap control
+			if (NULL == NotifyDispatch.pNotifyCtrl) break;
 
-			IDuiControlCallBack *pICallBack = Notify.pNotifyCtrl->GetControlCallBack(n);
+			if (i >= NotifyDispatch.pNotifyCtrl->GetControlCallBackCount()) break;
+			IDuiControlCallBack *pICallBack = NotifyDispatch.pNotifyCtrl->GetControlCallBack(i);
 			if (NULL == pICallBack) continue;
 
-			pICallBack->OnNotify(Notify.pNotifyCtrl, Notify);
+			pICallBack->OnNotify(NotifyDispatch.pNotifyCtrl, NotifyDispatch);
 		}
-		for (int n = 0; n < m_vecINotify.size(); n++)
+		for (int j = 0; j < m_vecINotify.size(); j++)
 		{
-			IDuiNotify *pINotify = m_vecINotify[n];
+			IDuiNotify *pINotify = m_vecINotify[j];
 			if (NULL == pINotify) continue;
 
-			pINotify->OnNotify(Notify);
+			//for other callback release and reap control
+			if (NULL == NotifyDispatch.pNotifyCtrl) break;
+
+			pINotify->OnNotify(NotifyDispatch);
 		}
 	}
+
+	m_queAsynNotify.clear();
 
 	return;
 }

@@ -135,8 +135,8 @@ typedef struct tagDuiNotify
 	CDUIControlBase *					pNotifyCtrl = NULL;						//maybe released, you should verify valid
 	UINT								uCtrlID = 0;
 	DWORD								dwTimestamp = 0;
-	POINT								ptMouse = {};
-	POINT								ptMousePre = {};
+	CDUIPoint							ptMouse = {};
+	CDUIPoint							ptMousePre = {};
 	WORD								wKeyState = 0;
 	WPARAM								wParam = 0;
 	LPARAM								lParam = 0;
@@ -146,26 +146,62 @@ typedef struct tagDuiNotify
 		enDuiNotifyExtendType			Type = DuiNotifyExtend_None;
 		struct
 		{
-			CDUIComboxCtrl *			pComboxCtrl;
-			int							nIndexItem;
+			CDUIComboxCtrl *			pComboxCtrl = NULL;
+			int							nIndexItem = -1;
 		}Combox;
 		struct tagDuiNotifyListView
 		{
-			int							nIndexItem;
+			int							nIndexItem = -1;
 			CMMString					strTextOld;
 		}ListView;
 		struct tagDuiNotifyTreeView
 		{
-			CDUITreeNodeCtrl *			pTreeNode;
-			CDUITreeNodeCtrl *			pRootNode;
-			CDUITreeViewCtrl *			pRootView;
+			CDUITreeNodeCtrl *			pTreeNode = NULL;
+			CDUITreeNodeCtrl *			pRootNode = NULL;
+			CDUITreeViewCtrl *			pRootView = NULL;
 			CMMString					strTextOld;
 		}TreeView;
 		struct tagDuiNotifyWndAnimate
 		{
-			bool						bShow;
+			bool						bShow = false;
 		}WndAnimate;
+
+		bool operator == (const tagDuiNotifyExtend &Right) const
+		{
+			return Type == Right.Type
+				&& Combox.pComboxCtrl == Right.Combox.pComboxCtrl
+				&& Combox.nIndexItem == Right.Combox.nIndexItem
+				&& ListView.nIndexItem == Right.ListView.nIndexItem
+				&& ListView.strTextOld == Right.ListView.strTextOld
+				&& TreeView.pTreeNode == Right.TreeView.pTreeNode
+				&& TreeView.pRootNode == Right.TreeView.pRootNode
+				&& TreeView.pRootView == Right.TreeView.pRootView
+				&& TreeView.strTextOld == Right.TreeView.strTextOld
+				&& WndAnimate.bShow == Right.WndAnimate.bShow;
+		}
+		bool operator != (const tagDuiNotifyExtend &Right) const
+		{
+			return !(*this == Right);
+		}
 	}DuiNotifyExtend = {};
+
+	bool operator == (const tagDuiNotify &Right) const
+	{
+		return NotifyType == Right.NotifyType
+			&& pNotifyCtrl == Right.pNotifyCtrl
+			&& uCtrlID == Right.uCtrlID
+			&& dwTimestamp == Right.dwTimestamp
+			&& ptMouse == Right.ptMouse
+			&& ptMousePre == Right.ptMousePre
+			&& wKeyState == Right.wKeyState
+			&& wParam == Right.wParam
+			&& lParam == Right.lParam
+			&& DuiNotifyExtend == Right.DuiNotifyExtend;
+	}
+	bool operator != (const tagDuiNotify &Right) const
+	{
+		return !(*this == Right);
+	}
 }DuiNotify;
 
 typedef struct tagDuiMenuCmd
@@ -183,7 +219,7 @@ typedef struct tagDuiCalendarCmd
 }DuiCalendarCmd;
 
 typedef std::vector<enDuiNotifyType> VecDuiNotifyType;
-typedef std::vector<DuiNotify> VecDuiNotify;
+typedef std::deque<DuiNotify> DequeDuiNotify;
 
 //////////////////////////////////////////////////////////////////////////
 class CDUINotifyPump;
