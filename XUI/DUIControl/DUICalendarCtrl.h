@@ -5,7 +5,7 @@
 #pragma pack(1)
 
 //////////////////////////////////////////////////////////////////////////
-typedef void (*OnConstructDay)(CDUIListItemCtrl *pDay, int nYear, int nMonth, int nDay);
+typedef std::function<void(CDUIListItemCtrl *pDay, int nYear, int nMonth, int nDay)> OnConstructDay;
 
 //////////////////////////////////////////////////////////////////////////
 class XUI_API CDUICalendarWnd : public CDUIPopupWnd
@@ -116,7 +116,7 @@ protected:
 	CDUIListViewCtrl *					m_pListDayCtrl2 = NULL;
 
 	tagDuiCalendarCmd					m_CalendarCmd;
-	std::vector<OnConstructDay>			m_vecConstructDayCallBack;
+	OnConstructDay						m_pConstructDayCallBack;
 
 	static LPCTSTR						m_szWeekDayAttriName[Dui_Count_WeekDay];
 
@@ -200,8 +200,7 @@ public:
 	virtual CMMString GetWeekText(int nWeekDay);
 
 	//callback
-	virtual void RegisterConstructDayCallback(OnConstructDay pOnConstructDay);
-	virtual void UnRegisterConstructDayCallback(OnConstructDay pOnConstructDay);
+	virtual void AttatchConstructDayCallback(OnConstructDay pOnConstructDay);
 
 	//method
 protected:

@@ -800,21 +800,9 @@ CMMString CDUICalendarCtrl::GetWeekText(int nWeekDay)
 	return nWeekDay < MMCountArray(m_AttributeTextWeekDay) ? m_AttributeTextWeekDay[nWeekDay].GetValue() : _T("");
 }
 
-void CDUICalendarCtrl::RegisterConstructDayCallback(OnConstructDay pOnConstructDay)
+void CDUICalendarCtrl::AttatchConstructDayCallback(OnConstructDay pOnConstructDay)
 {
-	if (find(m_vecConstructDayCallBack.begin(), m_vecConstructDayCallBack.end(), pOnConstructDay) != m_vecConstructDayCallBack.end()) return;
-
-	m_vecConstructDayCallBack.push_back(pOnConstructDay);
-
-	return;
-}
-
-void CDUICalendarCtrl::UnRegisterConstructDayCallback(OnConstructDay pOnConstructDay)
-{
-	auto FindIt = find(m_vecConstructDayCallBack.begin(), m_vecConstructDayCallBack.end(), pOnConstructDay);
-	if (FindIt == m_vecConstructDayCallBack.end()) return;
-
-	m_vecConstructDayCallBack.erase(FindIt);
+	m_pConstructDayCallBack = (pOnConstructDay);
 
 	return;
 }
@@ -1281,11 +1269,9 @@ void CDUICalendarCtrl::ConstructDay(CDUIListItemCtrl *pDay, int nYear, int nMont
 	pDay->EnableScrollBar(false, false);
 
 	//callback
-	for (auto pOnConstructDay : m_vecConstructDayCallBack)
+	if (m_pConstructDayCallBack)
 	{
-		if (NULL == pOnConstructDay) continue;
-
-		pOnConstructDay(pDay, nYear, nMonth, nDay);
+		m_pConstructDayCallBack(pDay, nYear, nMonth, nDay);
 	}
 
 	return;
