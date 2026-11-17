@@ -567,6 +567,53 @@ void CDUIListItemCtrl::SetTextStyle(const tagDuiTextStyle &TextStyle)
 	return;
 }
 
+VecDuiRichTextItem CDUIListItemCtrl::GetRichTextItem()
+{
+	return m_AttributeRichText.GetRichTextItem();
+}
+
+bool CDUIListItemCtrl::SetRichTextItem(const VecDuiRichTextItem &vecRichTextItem)
+{
+	tagDuiRichText RichText = GetRichText();
+	RichText.vecRichTextItem = vecRichTextItem;
+	return SetRichText(RichText);
+}
+
+tagDuiRichText CDUIListItemCtrl::GetRichText()
+{
+	return m_AttributeRichText.GetRichText();
+}
+
+bool CDUIListItemCtrl::SetRichText(const tagDuiRichText &RichText)
+{
+	if (RichText == GetRichText()) return true;
+
+	m_AttributeRichText.SetRichText(RichText);
+
+	if (m_pWndOwner)
+	{
+		m_pWndOwner->SendNotify(this, DuiNotify_TextChanged);
+	}
+
+	Invalidate();
+
+	return true;
+}
+
+int CDUIListItemCtrl::GetRichTextLineSpace()
+{
+	return DuiDpiScaleCtrl(m_AttributeRichTextLineSpace.GetValue());
+}
+
+void CDUIListItemCtrl::SetRichTextLineSpace(int nLineSpace)
+{
+	m_AttributeRichTextLineSpace.SetValue(nLineSpace);
+
+	NeedRefreshView();
+
+	return;
+}
+
 RECT CDUIListItemCtrl::GetTextPadding()
 {
 	return DuiDpiScaleCtrl(m_AttributeTextPadding.GetValue());
@@ -817,6 +864,8 @@ void CDUIListItemCtrl::InitProperty()
 	DuiCreateGroupAttribute(m_AttributeGroupText, _T("Text"));
 	DuiCreateAttribute(m_AttributeText, _T("Text"), _T(""), m_AttributeGroupText);
 	DuiCreateAttribute(m_AttributeTextStyle, _T("TextStyle"), _T(""), m_AttributeGroupText);
+	DuiCreateAttribute(m_AttributeRichText, _T("RichText"), _T(""), m_AttributeGroupText);
+	DuiCreateAttribute(m_AttributeRichTextLineSpace, _T("RichTextLineSpace"), _T(""), m_AttributeGroupText);
 	DuiCreateAttribute(m_AttributeTextPadding, _T("TextPadding"), _T(""), m_AttributeGroupText);
 
 	return;
@@ -880,6 +929,17 @@ void CDUIListItemCtrl::PaintText(HDC hDC)
 {
 	if (NULL == m_pWndOwner) return;
 
+	//range
+	CDUIRect rcRange = GetTextRange();
+
+	//richtext
+	if (false == m_AttributeRichText.IsEmpty())
+	{
+		m_AttributeRichText.Draw(hDC, rcRange, m_pWndOwner->IsGdiplusRenderText(), m_pWndOwner->GetGdiplusRenderTextType(), GetRichTextLineSpace(), IsShadowText());
+
+		return;
+	}
+
 	//text
 	CMMString strText = GetText();
 	if (strText.empty()) return;
@@ -888,9 +948,7 @@ void CDUIListItemCtrl::PaintText(HDC hDC)
 	CDUIAttributeTextStyle *pAttribute = GetAttributeTextStyleCur();
 	if (NULL == pAttribute) return;
 
-	CDUIRect rcRange = GetTextRange();
-
-	pAttribute->Draw(hDC, rcRange, strText, m_pWndOwner->IsGdiplusRenderText(), m_pWndOwner->GetGdiplusRenderTextType(), false);
+	pAttribute->Draw(hDC, rcRange, strText, m_pWndOwner->IsGdiplusRenderText(), m_pWndOwner->GetGdiplusRenderTextType(), IsShadowText());
 
 	return;
 }

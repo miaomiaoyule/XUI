@@ -257,45 +257,6 @@ bool CDUIStaticCtrl::SetText(LPCTSTR lpszText)
 	return true;
 }
 
-VecDuiRichTextItem CDUIStaticCtrl::GetRichTextItem()
-{
-	return m_AttributeRichText.GetRichTextItem();
-}
-
-bool CDUIStaticCtrl::SetRichTextItem(const VecDuiRichTextItem &vecRichTextItem)
-{
-	tagDuiRichText RichText = GetRichText();
-	RichText.vecRichTextItem = vecRichTextItem;
-	return SetRichText(RichText);
-}
-
-tagDuiRichText CDUIStaticCtrl::GetRichText()
-{
-	return m_AttributeRichText.GetRichText();
-}
-
-bool CDUIStaticCtrl::SetRichText(const tagDuiRichText &RichText)
-{
-	if (RichText == GetRichText()) return true;
-
-	m_AttributeRichText.SetRichText(RichText);
-
-	if (m_pWndOwner)
-	{
-		m_pWndOwner->SendNotify(this, DuiNotify_TextChanged);
-	}
-	if (IsAutoCalcWidth() || IsAutoCalcHeight())
-	{
-		NeedMeasureSize();
-
-		return true;
-	}
-
-	Invalidate();
-
-	return true;
-}
-
 bool CDUIStaticCtrl::IsShadowText()
 {
 	return m_AttribuetShadow.GetValue();
@@ -346,6 +307,45 @@ void CDUIStaticCtrl::SetTextStyle(const tagDuiTextStyle &TextStyle)
 	Invalidate();
 
 	return;
+}
+
+VecDuiRichTextItem CDUIStaticCtrl::GetRichTextItem()
+{
+	return m_AttributeRichText.GetRichTextItem();
+}
+
+bool CDUIStaticCtrl::SetRichTextItem(const VecDuiRichTextItem &vecRichTextItem)
+{
+	tagDuiRichText RichText = GetRichText();
+	RichText.vecRichTextItem = vecRichTextItem;
+	return SetRichText(RichText);
+}
+
+tagDuiRichText CDUIStaticCtrl::GetRichText()
+{
+	return m_AttributeRichText.GetRichText();
+}
+
+bool CDUIStaticCtrl::SetRichText(const tagDuiRichText &RichText)
+{
+	if (RichText == GetRichText()) return true;
+
+	m_AttributeRichText.SetRichText(RichText);
+
+	if (m_pWndOwner)
+	{
+		m_pWndOwner->SendNotify(this, DuiNotify_TextChanged);
+	}
+	if (IsAutoCalcWidth() || IsAutoCalcHeight())
+	{
+		NeedMeasureSize();
+
+		return true;
+	}
+
+	Invalidate();
+
+	return true;
 }
 
 int CDUIStaticCtrl::GetRichTextLineSpace()

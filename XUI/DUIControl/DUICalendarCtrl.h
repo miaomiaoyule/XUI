@@ -188,6 +188,8 @@ public:
 	virtual void SetColorResSwitchTodayBk(const vector<CMMString> &vecResSwitch);
 	virtual tagDuiCalendarCmd GetCalendarSelect();
 	virtual void SetCalendarSelect(tagDuiCalendarCmd tTime);
+	virtual void SwitchYearMonth(bool bPre);
+	virtual void SwitchYearMonth(int nYear, int nMonth);
 
 	//weekday 1-7
 	virtual CMMString GetMondayText();
@@ -218,6 +220,7 @@ protected:
 	void OnDuiMouseWheel(const DuiNotify &Notify);
 	void OnDuiItemSelected(const DuiNotify &Notify);
 	void OnDuiItemClick(const DuiNotify &Notify);
+	void OnDuiTabSelectChanged(const DuiNotify &Notify);
 	void OnDuiBtnLeft(const DuiNotify &Notify);
 	void OnDuiBtnRight(const DuiNotify &Notify);
 	void OnDuiBtnYear(const DuiNotify &Notify);
@@ -245,11 +248,10 @@ protected:
 	int GetMonthDays(int nYear, int nMonth);
 	bool GetPreYearMonth(IN int nYear, IN int nMonth, OUT int &nYearOut, OUT int &nMonthOut);
 	bool GetNextYearMonth(IN int nYear, IN int nMonth, OUT int &nYearOut, OUT int &nMonthOut);
+	void PerformSelectDay(CDUIListViewCtrl *pListDays, int nYear, int nMonth, int nDay);
 
 	//help
 protected:
-	void SwitchYearMonth(bool bPre);
-	void SwitchYearMonth(int nYear, int nMonth);
 	void PopupYearMonthWnd(bool bYear);
 };
 

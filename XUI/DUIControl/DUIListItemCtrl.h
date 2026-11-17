@@ -27,6 +27,8 @@ protected:
 	CDUIAttributeGroup					m_AttributeGroupText;
 	CDUIAttributeText					m_AttributeText;
 	CDUIAttributeTextStyle				m_AttributeTextStyle;
+	CDUIAttributeRichText				m_AttributeRichText;
+	CDUIAttributeLong					m_AttributeRichTextLineSpace;
 	CDUIAttributeRect					m_AttributeTextPadding;
 
 	//variant
@@ -117,6 +119,12 @@ public:
 	virtual tagDuiTextStyle GetTextStyle();
 	virtual tagDuiTextStyle GetTextStyleActive();
 	virtual void SetTextStyle(const tagDuiTextStyle &TextStyle);
+	virtual VecDuiRichTextItem GetRichTextItem();
+	virtual bool SetRichTextItem(const VecDuiRichTextItem &vecRichTextItem);
+	virtual tagDuiRichText GetRichText();
+	virtual bool SetRichText(const tagDuiRichText &RichText);
+	virtual int GetRichTextLineSpace();
+	virtual void SetRichTextLineSpace(int nLineSpace);
 	virtual RECT GetTextPadding();
 	virtual void SetTextPadding(RECT rcPadding);
 	virtual void PerformEditText();

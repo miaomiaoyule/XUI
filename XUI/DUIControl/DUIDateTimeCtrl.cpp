@@ -12,11 +12,9 @@ CDUIDateTimeCtrl::CDUIDateTimeCtrl(void)
 	return;
 }
 
-
 CDUIDateTimeCtrl::~CDUIDateTimeCtrl(void)
 {
 }
-
 
 bool CDUIDateTimeCtrl::OnAttributeChange(CDUIAttributeObject *pAttributeObj)
 {

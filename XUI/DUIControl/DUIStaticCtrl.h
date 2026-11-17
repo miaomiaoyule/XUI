@@ -70,10 +70,6 @@ public:
 	//text
 	virtual CMMString GetText();
 	virtual bool SetText(LPCTSTR lpszText);
-	virtual VecDuiRichTextItem GetRichTextItem();
-	virtual bool SetRichTextItem(const VecDuiRichTextItem &vecRichTextItem);
-	virtual tagDuiRichText GetRichText();
-	virtual bool SetRichText(const tagDuiRichText &RichText);
 	virtual bool IsShadowText() override;
 	virtual void SetShadowText(bool bShadow);
 	virtual HFONT GetFont();
@@ -81,6 +77,10 @@ public:
 	virtual tagDuiTextStyle GetTextStyle();
 	virtual tagDuiTextStyle GetTextStyleActive();
 	virtual void SetTextStyle(const tagDuiTextStyle &TextStyle);
+	virtual VecDuiRichTextItem GetRichTextItem();
+	virtual bool SetRichTextItem(const VecDuiRichTextItem &vecRichTextItem);
+	virtual tagDuiRichText GetRichText();
+	virtual bool SetRichText(const tagDuiRichText &RichText);
 	virtual int GetRichTextLineSpace();
 	virtual void SetRichTextLineSpace(int nLineSpace);
 	virtual RECT GetTextPadding();

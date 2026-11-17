@@ -186,6 +186,7 @@ DuiBegin_Message_Map(CDUICalendarCtrl, CDUINotifyPump)
 	Dui_On_Notify(DuiNotify_MouseWheel, OnDuiMouseWheel)
 	Dui_On_Notify(DuiNotify_ItemSelected, OnDuiItemSelected)
 	Dui_On_Notify(DuiNotify_ItemClick, OnDuiItemClick)
+	Dui_On_Notify(DuiNotify_TabSelectChanged, OnDuiTabSelectChanged)
 	Dui_On_Notify_Ctrl(DuiNotify_Click, Dui_CtrlIDInner_CalendarBtnLeft, OnDuiBtnLeft)
 	Dui_On_Notify_Ctrl(DuiNotify_Click, Dui_CtrlIDInner_CalendarBtnRight, OnDuiBtnRight)
 	Dui_On_Notify_Ctrl(DuiNotify_Click, Dui_CtrlIDInner_CalendarBtnYear, OnDuiBtnYear)
@@ -757,6 +758,79 @@ void CDUICalendarCtrl::SetCalendarSelect(tagDuiCalendarCmd tTime)
 {
 	m_CalendarCmd = tTime;
 
+	//switch
+	CDUIListViewCtrl *pListCurCtrl = m_pListDayCtrl1->IsVisible() ? m_pListDayCtrl1 : m_pListDayCtrl2;
+	if (NULL == pListCurCtrl) return;
+
+	int nYear = ParseYear(pListCurCtrl->GetTag()), nMonth = ParseMonth(pListCurCtrl->GetTag());
+	if (tTime.tTimeSelected.wYear != nYear || tTime.tTimeSelected.wMonth != nMonth)
+	{
+		SwitchYearMonth(tTime.tTimeSelected.wYear, tTime.tTimeSelected.wMonth);
+
+		return;
+	}
+
+	//select
+	pListCurCtrl->UnSelectAllItems();
+	if (m_CalendarCmd.bSelected)
+	{
+		PerformSelectDay(pListCurCtrl, m_CalendarCmd.tTimeSelected.wYear, m_CalendarCmd.tTimeSelected.wMonth, m_CalendarCmd.tTimeSelected.wDay);
+	}
+
+	return;
+}
+
+void CDUICalendarCtrl::SwitchYearMonth(bool bPre)
+{
+	if (NULL == m_pTabSwitchCtrl || NULL == m_pListDayCtrl1 || NULL == m_pListDayCtrl2) return;
+
+	CDUIListViewCtrl *pListCurCtrl = m_pListDayCtrl1->IsVisible() ? m_pListDayCtrl1 : m_pListDayCtrl2;
+	CDUIListViewCtrl *pListJumpCtrl = pListCurCtrl == m_pListDayCtrl1 ? m_pListDayCtrl2 : m_pListDayCtrl1;
+	CDUIVerticalLayoutCtrl *pVertJumpCtrl = pListCurCtrl == m_pListDayCtrl1 ? m_pVertPageCtrl2 : m_pVertPageCtrl1;
+	int nYear = ParseYear(pListCurCtrl->GetTag()), nMonth = ParseMonth(pListCurCtrl->GetTag());
+
+	if (bPre)
+	{
+		int nYearPre = 0, nMonthPre = 0;
+		if (GetPreYearMonth(nYear, nMonth, nYearPre, nMonthPre))
+		{
+			ConstructHeader(nYearPre, nMonthPre);
+			ConstructCalendar(pListJumpCtrl, nYearPre, nMonthPre);
+
+			m_pTabSwitchCtrl->SetChildIndex(pVertJumpCtrl, 0);
+			m_pTabSwitchCtrl->Select(0);
+		}
+
+		return;
+	}
+
+	int nYearNext = 0, nMonthNext = 0;
+	if (GetNextYearMonth(nYear, nMonth, nYearNext, nMonthNext))
+	{
+		ConstructHeader(nYearNext, nMonthNext);
+		ConstructCalendar(pListJumpCtrl, nYearNext, nMonthNext);
+
+		m_pTabSwitchCtrl->SetChildIndex(pVertJumpCtrl, 1);
+		m_pTabSwitchCtrl->Select(1);
+	}
+
+	return;
+}
+
+void CDUICalendarCtrl::SwitchYearMonth(int nYear, int nMonth)
+{
+	if (NULL == m_pTabSwitchCtrl || NULL == m_pListDayCtrl1 || NULL == m_pListDayCtrl2) return;
+
+	CDUIListViewCtrl *pListCurCtrl = m_pListDayCtrl1->IsVisible() ? m_pListDayCtrl1 : m_pListDayCtrl2;
+	CDUIListViewCtrl *pListJumpCtrl = pListCurCtrl == m_pListDayCtrl1 ? m_pListDayCtrl2 : m_pListDayCtrl1;
+	CDUIVerticalLayoutCtrl *pVertJumpCtrl = pListCurCtrl == m_pListDayCtrl1 ? m_pVertPageCtrl2 : m_pVertPageCtrl1;
+
+	ConstructHeader(nYear, nMonth);
+	ConstructCalendar(pListJumpCtrl, nYear, nMonth);
+
+	m_pTabSwitchCtrl->SetChildIndex(pVertJumpCtrl, 0);
+	m_pTabSwitchCtrl->Select(0);
+
 	return;
 }
 
@@ -920,6 +994,7 @@ void CDUICalendarCtrl::OnDuiItemSelected(const DuiNotify &Notify)
 	m_CalendarCmd.tTimeSelected.wYear = ParseYear(pDay->GetTag());
 	m_CalendarCmd.tTimeSelected.wMonth = ParseMonth(pDay->GetTag());
 	m_CalendarCmd.tTimeSelected.wDay = ParseDay(pDay->GetTag());
+	m_pWndOwner->SendNotify(this, DuiNotify_DateSelectChanged);
 
 	return;
 }
@@ -944,6 +1019,17 @@ void CDUICalendarCtrl::OnDuiItemClick(const DuiNotify &Notify)
 	{
 		g_pDuiCalendarWnd->Close();
 	}
+
+	m_pWndOwner->SendNotify(this, DuiNotify_DateSelectChanged);
+
+	return;
+}
+
+void CDUICalendarCtrl::OnDuiTabSelectChanged(const DuiNotify &Notify)
+{
+	if (NULL == Notify.pNotifyCtrl || m_pTabSwitchCtrl != Notify.pNotifyCtrl) return;
+
+	m_pWndOwner->SendNotify(this, DuiNotify_CalendarSwitchChanged);
 
 	return;
 }
@@ -1331,24 +1417,10 @@ void CDUICalendarCtrl::ConstructCalendar(CDUIListViewCtrl *pListDays, int nYear,
 	}
 
 	//select
-	for (int n = 0; n < pListDays->GetChildCount(); n++)
+	pListDays->UnSelectAllItems();
+	if (m_CalendarCmd.bSelected)
 	{
-		CDUIListItemCtrl *pDay = pListDays->GetChildAt(n);
-		if (NULL == pDay) continue;
-
-		int nYear = ParseYear(pDay->GetTag());
-		int nMonth = ParseMonth(pDay->GetTag());
-		int nDay = ParseDay(pDay->GetTag());
-
-		if (m_CalendarCmd.bSelected
-			&& m_CalendarCmd.tTimeSelected.wYear == nYear
-			&& m_CalendarCmd.tTimeSelected.wMonth == nMonth
-			&& m_CalendarCmd.tTimeSelected.wDay == nDay)
-		{
-			pListDays->SelectItem(n);
-
-			break;
-		}
+		PerformSelectDay(pListDays, m_CalendarCmd.tTimeSelected.wYear, m_CalendarCmd.tTimeSelected.wMonth, m_CalendarCmd.tTimeSelected.wDay);
 	}
 
 	return;
@@ -1450,56 +1522,23 @@ bool CDUICalendarCtrl::GetNextYearMonth(IN int nYear, IN int nMonth, OUT int &nY
 	return true;
 }
 
-void CDUICalendarCtrl::SwitchYearMonth(bool bPre)
+void CDUICalendarCtrl::PerformSelectDay(CDUIListViewCtrl *pListDays, int nYear, int nMonth, int nDay)
 {
-	if (NULL == m_pTabSwitchCtrl || NULL == m_pListDayCtrl1 || NULL == m_pListDayCtrl2) return;
+	if (NULL == pListDays) return;
 
-	CDUIListViewCtrl *pListCurCtrl = m_pListDayCtrl1->IsVisible() ? m_pListDayCtrl1 : m_pListDayCtrl2;
-	CDUIListViewCtrl *pListJumpCtrl = pListCurCtrl == m_pListDayCtrl1 ? m_pListDayCtrl2 : m_pListDayCtrl1;
-	CDUIVerticalLayoutCtrl *pVertJumpCtrl = pListCurCtrl == m_pListDayCtrl1 ? m_pVertPageCtrl2 : m_pVertPageCtrl1;
-	int nYear = ParseYear(pListCurCtrl->GetTag()), nMonth = ParseMonth(pListCurCtrl->GetTag());
-
-	if (bPre)
+	DWORD dwDate = ConstructDate(nYear, nMonth, nDay);
+	for (int n = 0; n < pListDays->GetChildCount(); n++)
 	{
-		int nYearPre = 0, nMonthPre = 0;
-		if (GetPreYearMonth(nYear, nMonth, nYearPre, nMonthPre))
+		CDUIListItemCtrl *pDay = pListDays->GetChildAt(n);
+		if (NULL == pDay) continue;
+
+		if (dwDate == pDay->GetTag())
 		{
-			ConstructHeader(nYearPre, nMonthPre);
-			ConstructCalendar(pListJumpCtrl, nYearPre, nMonthPre);
+			pListDays->SelectItem(n);
 
-			m_pTabSwitchCtrl->SetChildIndex(pVertJumpCtrl, 0);
-			m_pTabSwitchCtrl->Select(0);
+			break;
 		}
-
-		return;
 	}
-
-	int nYearNext = 0, nMonthNext = 0;
-	if (GetNextYearMonth(nYear, nMonth, nYearNext, nMonthNext))
-	{
-		ConstructHeader(nYearNext, nMonthNext);
-		ConstructCalendar(pListJumpCtrl, nYearNext, nMonthNext);
-
-		m_pTabSwitchCtrl->SetChildIndex(pVertJumpCtrl, 1);
-		m_pTabSwitchCtrl->Select(1);
-	}
-
-	return;
-}
-
-void CDUICalendarCtrl::SwitchYearMonth(int nYear, int nMonth)
-{
-	if (NULL == m_pTabSwitchCtrl || NULL == m_pListDayCtrl1 || NULL == m_pListDayCtrl2) return;
-
-	CDUIListViewCtrl *pListCurCtrl = m_pListDayCtrl1->IsVisible() ? m_pListDayCtrl1 : m_pListDayCtrl2;
-	CDUIListViewCtrl *pListJumpCtrl = pListCurCtrl == m_pListDayCtrl1 ? m_pListDayCtrl2 : m_pListDayCtrl1;
-	CDUIVerticalLayoutCtrl *pVertJumpCtrl = pListCurCtrl == m_pListDayCtrl1 ? m_pVertPageCtrl2 : m_pVertPageCtrl1;
-
-	ConstructHeader(nYear, nMonth);
-	ConstructCalendar(pListJumpCtrl, nYear, nMonth);
-
-	m_pTabSwitchCtrl->SetChildIndex(pVertJumpCtrl, 0);
-	m_pTabSwitchCtrl->Select(0);
 
 	return;
 }

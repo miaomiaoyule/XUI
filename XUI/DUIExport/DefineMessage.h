@@ -96,6 +96,8 @@ enum enDuiNotifyType
 	DuiNotify_WinDragLeave = 412,
 	DuiNotify_WinDrop = 413,
 	DuiNotify_ColorPaletteChanged = 420,
+	DuiNotify_DateSelectChanged = 430,
+	DuiNotify_CalendarSwitchChanged = 431,
 };
 
 //notify sig
