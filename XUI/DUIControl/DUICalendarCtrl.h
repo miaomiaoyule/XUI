@@ -115,7 +115,7 @@ protected:
 	CDUIListViewCtrl *					m_pListDayCtrl1 = NULL;
 	CDUIListViewCtrl *					m_pListDayCtrl2 = NULL;
 
-	tagDuiCalendarCmd					m_CalendarCmd;
+	tagDuiCalendarCmd					m_CalendarCur;
 	OnConstructDay						m_pConstructDayCallBack;
 
 	static LPCTSTR						m_szWeekDayAttriName[Dui_Count_WeekDay];
@@ -136,6 +136,7 @@ public:
 
 	//basic
 	bool SetWndOwner(CDUIWnd *pWndOwner) override;
+	bool DoPaint(HDC hDC, bool bGenerateBmp = false) override;
 
 	//calendar;
 	virtual bool IsHeaderVisible();
@@ -186,8 +187,8 @@ public:
 	virtual void SetColorResSwitchHotDayBk(const vector<CMMString> &vecResSwitch);
 	virtual void SetColorResSwitchSelDayBk(const vector<CMMString> &vecResSwitch);
 	virtual void SetColorResSwitchTodayBk(const vector<CMMString> &vecResSwitch);
-	virtual tagDuiCalendarCmd GetCalendarSelect();
-	virtual void SetCalendarSelect(tagDuiCalendarCmd tTime);
+	virtual tagDuiCalendarCmd GetCalendarCur();
+	virtual void SetCalendarCur(tagDuiCalendarCmd CalendarCmd);
 	virtual void SwitchYearMonth(bool bPre);
 	virtual void SwitchYearMonth(int nYear, int nMonth);
 
@@ -204,13 +205,9 @@ public:
 	//callback
 	virtual void AttatchConstructDayCallback(OnConstructDay pOnConstructDay);
 
-	//method
-protected:
-	//child
-	bool InsertChild(CDUIControlBase *pChild, int nPos = -1) override;
-
 	//proprety
 protected:
+	bool InsertChild(CDUIControlBase *pChild, int nPos = -1) override;
 	void InitProperty() override;
 	void InitComplete() override;
 	bool SaveAttribute(tinyxml2::XMLElement *pNode, bool bIncludeChild = true) override;

@@ -217,7 +217,7 @@ typedef struct tagDuiMenuCmd
 typedef struct tagDuiCalendarCmd
 {
 	bool								bSelected = false;
-	SYSTEMTIME							tTimeSelected = {};
+	SYSTEMTIME							tDate = {};
 }DuiCalendarCmd;
 
 typedef std::vector<enDuiNotifyType> VecDuiNotifyType;

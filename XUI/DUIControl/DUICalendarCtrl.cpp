@@ -317,6 +317,17 @@ bool CDUICalendarCtrl::SetWndOwner(CDUIWnd *pWndOwner)
 	return true;
 }
 
+bool CDUICalendarCtrl::DoPaint(HDC hDC, bool bGenerateBmp)
+{
+	//calendar info
+	if (0 == m_pBtnYearCtrl->GetTag())
+	{
+		InitCalendarInfo();
+	}
+
+	return __super::DoPaint(hDC, bGenerateBmp);
+}
+
 bool CDUICalendarCtrl::IsHeaderVisible()
 {
 	return m_AttributeHeaderVisible.GetValue();
@@ -749,32 +760,36 @@ void CDUICalendarCtrl::SetColorResSwitchTodayBk(const vector<CMMString> &vecResS
 	return;
 }
 
-tagDuiCalendarCmd CDUICalendarCtrl::GetCalendarSelect()
+tagDuiCalendarCmd CDUICalendarCtrl::GetCalendarCur()
 {
-	return m_CalendarCmd;
+	return m_CalendarCur;
 }
 
-void CDUICalendarCtrl::SetCalendarSelect(tagDuiCalendarCmd tTime)
+void CDUICalendarCtrl::SetCalendarCur(tagDuiCalendarCmd CalendarCmd)
 {
-	m_CalendarCmd = tTime;
-
 	//switch
 	CDUIListViewCtrl *pListCurCtrl = m_pListDayCtrl1->IsVisible() ? m_pListDayCtrl1 : m_pListDayCtrl2;
 	if (NULL == pListCurCtrl) return;
 
 	int nYear = ParseYear(pListCurCtrl->GetTag()), nMonth = ParseMonth(pListCurCtrl->GetTag());
-	if (tTime.tTimeSelected.wYear != nYear || tTime.tTimeSelected.wMonth != nMonth)
+	if (CalendarCmd.tDate.wYear != nYear 
+		|| CalendarCmd.tDate.wMonth != nMonth
+		|| m_CalendarCur.tDate.wYear != CalendarCmd.tDate.wYear
+		|| m_CalendarCur.tDate.wMonth != CalendarCmd.tDate.wMonth
+		|| m_CalendarCur.tDate.wDay != CalendarCmd.tDate.wDay)
 	{
-		SwitchYearMonth(tTime.tTimeSelected.wYear, tTime.tTimeSelected.wMonth);
+		m_CalendarCur = CalendarCmd;
+		SwitchYearMonth(CalendarCmd.tDate.wYear, CalendarCmd.tDate.wMonth);
 
 		return;
 	}
 
 	//select
+	m_CalendarCur = CalendarCmd;
 	pListCurCtrl->UnSelectAllItems();
-	if (m_CalendarCmd.bSelected)
+	if (m_CalendarCur.bSelected)
 	{
-		PerformSelectDay(pListCurCtrl, m_CalendarCmd.tTimeSelected.wYear, m_CalendarCmd.tTimeSelected.wMonth, m_CalendarCmd.tTimeSelected.wDay);
+		PerformSelectDay(pListCurCtrl, m_CalendarCur.tDate.wYear, m_CalendarCur.tDate.wMonth, m_CalendarCur.tDate.wDay);
 	}
 
 	return;
@@ -948,9 +963,6 @@ void CDUICalendarCtrl::InitComplete()
 	//ctrl info
 	InitCtrlInfo();
 
-	//calendar info
-	InitCalendarInfo();
-
 	return;
 }
 
@@ -990,10 +1002,10 @@ void CDUICalendarCtrl::OnDuiItemSelected(const DuiNotify &Notify)
 
 	if (NULL == pDay) return;
 
-	m_CalendarCmd.bSelected = true;
-	m_CalendarCmd.tTimeSelected.wYear = ParseYear(pDay->GetTag());
-	m_CalendarCmd.tTimeSelected.wMonth = ParseMonth(pDay->GetTag());
-	m_CalendarCmd.tTimeSelected.wDay = ParseDay(pDay->GetTag());
+	m_CalendarCur.bSelected = true;
+	m_CalendarCur.tDate.wYear = ParseYear(pDay->GetTag());
+	m_CalendarCur.tDate.wMonth = ParseMonth(pDay->GetTag());
+	m_CalendarCur.tDate.wDay = ParseDay(pDay->GetTag());
 	m_pWndOwner->SendNotify(this, DuiNotify_DateSelectChanged);
 
 	return;
@@ -1009,11 +1021,11 @@ void CDUICalendarCtrl::OnDuiItemClick(const DuiNotify &Notify)
 
 	if (NULL == pDay) return;
 
-	m_CalendarCmd.bSelected = true;
-	m_CalendarCmd.tTimeSelected.wYear = ParseYear(pDay->GetTag());
-	m_CalendarCmd.tTimeSelected.wMonth = ParseMonth(pDay->GetTag());
-	m_CalendarCmd.tTimeSelected.wDay = ParseDay(pDay->GetTag());
-	g_DuiCalendarCmd = m_CalendarCmd;
+	m_CalendarCur.bSelected = true;
+	m_CalendarCur.tDate.wYear = ParseYear(pDay->GetTag());
+	m_CalendarCur.tDate.wMonth = ParseMonth(pDay->GetTag());
+	m_CalendarCur.tDate.wDay = ParseDay(pDay->GetTag());
+	g_DuiCalendarCmd = m_CalendarCur;
 
 	if (g_pDuiCalendarWnd)
 	{
@@ -1285,12 +1297,11 @@ void CDUICalendarCtrl::InitCalendarInfo()
 	if (NULL == m_pTabSwitchCtrl || NULL == m_pListDayCtrl1 || NULL == m_pListDayCtrl2) return;
 
 	//time
-	SYSTEMTIME LocalTime = {};
-	GetLocalTime(&LocalTime);
+	GetLocalTime(&m_CalendarCur.tDate);
 
 	//cur month
-	ConstructHeader(LocalTime.wYear, LocalTime.wMonth);
-	ConstructCalendar(m_pListDayCtrl1, LocalTime.wYear, LocalTime.wMonth);
+	ConstructHeader(m_CalendarCur.tDate.wYear, m_CalendarCur.tDate.wMonth);
+	ConstructCalendar(m_pListDayCtrl1, m_CalendarCur.tDate.wYear, m_CalendarCur.tDate.wMonth);
 
 	m_pTabSwitchCtrl->Select(m_pVertPageCtrl1);
 
@@ -1418,9 +1429,9 @@ void CDUICalendarCtrl::ConstructCalendar(CDUIListViewCtrl *pListDays, int nYear,
 
 	//select
 	pListDays->UnSelectAllItems();
-	if (m_CalendarCmd.bSelected)
+	if (m_CalendarCur.bSelected)
 	{
-		PerformSelectDay(pListDays, m_CalendarCmd.tTimeSelected.wYear, m_CalendarCmd.tTimeSelected.wMonth, m_CalendarCmd.tTimeSelected.wDay);
+		PerformSelectDay(pListDays, m_CalendarCur.tDate.wYear, m_CalendarCur.tDate.wMonth, m_CalendarCur.tDate.wDay);
 	}
 
 	return;

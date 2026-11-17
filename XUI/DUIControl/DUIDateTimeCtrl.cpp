@@ -431,7 +431,7 @@ void CDUIDateTimeCtrl::PerformActiveCalendar()
 
 	if (CalendarCmd.bSelected)
 	{
-		SetDateTime(CalendarCmd.tTimeSelected);
+		SetDateTime(CalendarCmd.tDate);
 	}
 
 	return;
