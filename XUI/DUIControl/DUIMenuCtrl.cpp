@@ -1056,7 +1056,6 @@ void CDUIMenuCtrl::InitComplete()
 	DuiInitAttriVisible(m_AttributeAutoCalcHeight, false);
 	DuiInitAttriVisible(m_AttributeGroupAnimation, false);
 	DuiInitAttriVisible(m_AttributeGroupScroll, false);
-	DuiInitAttriVisible(m_AttributeChildPaddingH, false);
 	DuiInitAttriVisible(m_AttributeAutoCalcChildPaddingH, false);
 	DuiInitAttriVisible(m_AttributeUseListHeader, false);
 	DuiInitAttriVisible(m_AttributeMultiSel, false);
