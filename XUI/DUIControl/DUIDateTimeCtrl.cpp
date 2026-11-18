@@ -421,15 +421,21 @@ void CDUIDateTimeCtrl::PerformActiveCalendar()
 
 	CDUICalendar Calendar;
 	Calendar.LoadCalendar(strCalendarDui);
-	if (NULL == g_pDuiCalendarWnd) return;
+	CDUICalendarCtrl *pCalendarCtrl = Calendar.GetCalendarCtrl();
+	if (NULL == g_pDuiCalendarWnd || NULL == pCalendarCtrl) return;
 
-	CDUISize szWnd = g_pDuiCalendarWnd->GetWndInitSize();
+	SYSTEMTIME tDate = GetDateTime();
+	pCalendarCtrl->SetCalendarCur({ tDate });
+
+	CDUISize szWnd = g_pDuiCalendarWnd->GetWndInitSize();	
 	CDUIRect rcCtrl = GetAbsoluteRect();
 	MMClientToScreen(rcCtrl, GetWndHandle());
 	CDUIPoint ptPopup(rcCtrl.left + rcCtrl.GetWidth() / 2 - szWnd.cx / 2, rcCtrl.bottom);
 	tagDuiCalendarCmd CalendarCmd = Calendar.TrackPopupCalendar(GetWndHandle(), ptPopup);
 
-	if (CalendarCmd.bSelected)
+	if (CalendarCmd.tDate.wYear != tDate.wYear
+		|| CalendarCmd.tDate.wMonth != tDate.wMonth
+		|| CalendarCmd.tDate.wDay != tDate.wDay)
 	{
 		SetDateTime(CalendarCmd.tDate);
 	}

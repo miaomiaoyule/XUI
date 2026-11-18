@@ -216,7 +216,6 @@ typedef struct tagDuiMenuCmd
 
 typedef struct tagDuiCalendarCmd
 {
-	bool								bSelected = false;
 	SYSTEMTIME							tDate = {};
 }DuiCalendarCmd;
 
