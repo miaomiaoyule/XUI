@@ -2992,10 +2992,10 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeH()
 		}
 
 		//item.cx == 0
-		if (m_nWidthColumn == GetChildPaddingH())
+		if (szItem.cx <= 0)
 		{
 			if (false == IsAutoCalcWidth()
-				&& nLeftFrom + pItem->GetFixedWidth() > rcItemRange.right 
+				&& nLeftFrom + pItem->GetFixedWidth() > rcItemRange.right
 				&& nLeftFrom > rcItemRange.left + nLeftOffset)
 			{
 				nLeftFrom = rcItemRange.left + nLeftOffset;
@@ -3021,7 +3021,7 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeH()
 		rcModal.bottom = nBottom;
 
 		//item.cx == 0
-		if (m_nWidthColumn == GetChildPaddingH())
+		if (szItem.cx <= 0)
 		{
 			rcModal.left = nLeftFrom;
 			rcModal.right = rcModal.left + pItem->GetFixedWidth();
@@ -3107,7 +3107,7 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeV()
 		}
 
 		//item.cy == 0
-		if (m_nHeightRow == GetChildPaddingV())
+		if (szItem.cy <= 0)
 		{
 			if (false == IsAutoCalcHeight()
 				&& nTopFrom + pItem->GetFixedHeight() > rcItemRange.bottom
@@ -3136,7 +3136,7 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeV()
 		rcModal.right = nRight;
 
 		//item.cy == 0
-		if (m_nHeightRow == GetChildPaddingV())
+		if (szItem.cy <= 0)
 		{
 			rcModal.top = nTopFrom;
 			rcModal.bottom = rcModal.top + pItem->GetFixedHeight();
