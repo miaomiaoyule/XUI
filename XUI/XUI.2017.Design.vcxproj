@@ -256,6 +256,7 @@ copy "XUI.h" "../../DemoTest\DemoFirst\DemoFirst\XUIInclude"</Command>
     <ClInclude Include="DUIAttribute\DUIText\DUIAttributeText.h" />
     <ClInclude Include="DUIAttribute\DUIText\DUIAttributeTextStyle.h" />
     <ClInclude Include="DUIControl\DUIClockCtrl.h" />
+    <ClInclude Include="DUIControl\DUIDockBarCtrl.h" />
     <ClInclude Include="DUIControl\DUIGroupCtrl.h" />
     <ClInclude Include="DUIControl\DUIInstrumentCtrl.h" />
     <ClInclude Include="DUIControl\DUIKLineChartCtrl.h" />
@@ -359,6 +360,7 @@ copy "XUI.h" "../../DemoTest\DemoFirst\DemoFirst\XUIInclude"</Command>
     <ClCompile Include="DUIAttribute\DUIText\DUIAttributeText.cpp" />
     <ClCompile Include="DUIAttribute\DUIText\DUIAttributeTextStyle.cpp" />
     <ClCompile Include="DUIControl\DUIClockCtrl.cpp" />
+    <ClCompile Include="DUIControl\DUIDockBarCtrl.cpp" />
     <ClCompile Include="DUIControl\DUIGroupCtrl.cpp" />
     <ClCompile Include="DUIControl\DUIInstrumentCtrl.cpp" />
     <ClCompile Include="DUIControl\DUIKLineChartCtrl.cpp" />

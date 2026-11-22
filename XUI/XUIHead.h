@@ -304,6 +304,7 @@ using namespace tinyxml2;
 #include "DUIControl/DUIKLineChartCtrl.h"
 #include "DUIControl/DUIDateTimeCtrl.h"
 #include "DUIControl/DUIWebBrowserCtrl.h"
+#include "DUIControl/DUIDockBarCtrl.h"
 
 #include "DUIUtils/Utils.h"
 

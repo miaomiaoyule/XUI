@@ -3062,7 +3062,7 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeH()
 			}
 		}
 
-		nCurScrollRangeX = max(nCurScrollRangeX, rcItem.right + (IsLeftFromRange() ? 0 : GetChildPaddingH() / 2));
+		nCurScrollRangeX = max(nCurScrollRangeX, rcItem.right - rcItemRange.left + (IsLeftFromRange() ? 0 : GetChildPaddingH() / 2));
 	}
 
 	m_szTotalRange = { IsAutoCalcWidth() ? nCurScrollRangeX : rcItemRange.GetWidth(), nCurScrollRangeY };
@@ -3175,7 +3175,7 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeV()
 			}
 		}
 
-		nCurScrollRangeY = max(nCurScrollRangeY, rcItem.bottom + (IsTopFromRange() ? 0 : GetChildPaddingV() / 2));
+		nCurScrollRangeY = max(nCurScrollRangeY, rcItem.bottom - rcItemRange.top + (IsTopFromRange() ? 0 : GetChildPaddingV() / 2));
 	}
 
 	m_szTotalRange = { nCurScrollRangeX, IsAutoCalcHeight() ? nCurScrollRangeY : rcItemRange.GetHeight() };

@@ -372,6 +372,9 @@
     <ClInclude Include="DUICore\DUIRender\DUIGdiPortable.h">
       <Filter>DUICore\DUIRender</Filter>
     </ClInclude>
+    <ClInclude Include="DUIControl\DUIDockBarCtrl.h">
+      <Filter>DUIControl</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -643,6 +646,9 @@
     </ClCompile>
     <ClCompile Include="DUICore\DUIRender\DUIGdiplusPortable.cpp">
       <Filter>DUICore\DUIRender</Filter>
+    </ClCompile>
+    <ClCompile Include="DUIControl\DUIDockBarCtrl.cpp">
+      <Filter>DUIControl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

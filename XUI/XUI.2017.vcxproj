@@ -820,6 +820,7 @@ copy "XUI.h" "../../DemoTest\DemoFirst\DemoFirst\XUIInclude"</Command>
     <ClInclude Include="DUIControl\DUIListHeaderItemCtrl.h" />
     <ClInclude Include="DUIControl\DUIListItemCtrl.h" />
     <ClInclude Include="DUIControl\DUIListViewCtrl.h" />
+    <ClInclude Include="DUIControl\DUIDockBarCtrl.h" />
     <ClInclude Include="DUIControl\DUIMenuCtrl.h" />
     <ClInclude Include="DUIControl\DUIProgressCtrl.h" />
     <ClInclude Include="DUIControl\DUIRadioBoxCtrl.h" />
@@ -922,6 +923,7 @@ copy "XUI.h" "../../DemoTest\DemoFirst\DemoFirst\XUIInclude"</Command>
     <ClCompile Include="DUIControl\DUIListHeaderItemCtrl.cpp" />
     <ClCompile Include="DUIControl\DUIListItemCtrl.cpp" />
     <ClCompile Include="DUIControl\DUIListViewCtrl.cpp" />
+    <ClCompile Include="DUIControl\DUIDockBarCtrl.cpp" />
     <ClCompile Include="DUIControl\DUIMenuCtrl.cpp" />
     <ClCompile Include="DUIControl\DUIProgressCtrl.cpp" />
     <ClCompile Include="DUIControl\DUIRadioBoxCtrl.cpp" />

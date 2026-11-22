@@ -239,6 +239,13 @@ enum enDuiKLineChartType
 	KLineChart_Month,
 };
 
+enum enDuiDockBarEffectType
+{
+	DockBarEffect_None,
+	DockBarEffect_Select,
+	DockBarEffect_MouseMove,
+};
+
 //////////////////////////////////////////////////////////////////////////
 
 #endif

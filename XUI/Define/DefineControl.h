@@ -50,6 +50,7 @@
 #define Dui_Ctrl_ListHeader							(_T("ListHeaderCtrl"))
 #define Dui_Ctrl_ListItem							(_T("ListItemCtrl"))
 #define Dui_Ctrl_ListView							(_T("ListViewCtrl"))
+#define Dui_Ctrl_DockBar							(_T("DockBarCtrl"))
 #define Dui_Ctrl_IPAddress							(_T("IPAddressCtrl"))
 #define Dui_Ctrl_ColorPalette						(_T("ColorPaletteCtrl"))
 #define Dui_Ctrl_Spin								(_T("SpinCtrl"))
