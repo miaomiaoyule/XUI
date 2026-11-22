@@ -2220,6 +2220,106 @@ Gdiplus::Bitmap * CDUIRenderEngine::GenerateThumbnail(Gdiplus::Bitmap *pBmp, con
 	return pBmpThumb;
 }
 
+Gdiplus::Bitmap * CDUIRenderEngine::GenerateReflectionBitmap(Gdiplus::Bitmap *pBmp, const CDUISize &szGenerate,
+	float fReflectRatio, float fMaxAlpha, float fVertPow, float fSideAlpha, float fSidePow)
+{
+	if (pBmp == nullptr || szGenerate.cx <= 0 || szGenerate.cy <= 0) return nullptr;
+
+	const int nW = szGenerate.cx;
+	const int nSrcH = szGenerate.cy;
+
+	int nRefH = static_cast<int>(nSrcH * fReflectRatio + 0.5f);
+	if (nRefH < 1) return nullptr;
+	if (nRefH > nSrcH) nRefH = nSrcH;			//倒影不超过图标自身高度
+
+	//参数收敛到合法区间
+	fMaxAlpha = (fMaxAlpha < 0.0f) ? 0.0f : ((fMaxAlpha > 1.0f) ? 1.0f : fMaxAlpha);
+	fSideAlpha = (fSideAlpha < 0.0f) ? 0.0f : ((fSideAlpha > 1.0f) ? 1.0f : fSideAlpha);
+	if (fVertPow <= 0.0f) fVertPow = 1.0f;
+	if (fSidePow <= 0.0f) fSidePow = 1.0f;
+
+	//1) 源图标统一转成 32bppARGB（直通 alpha）并缩放到目标尺寸
+	Gdiplus::Bitmap bmpSource(nW, nSrcH, PixelFormat32bppARGB);
+	if (Gdiplus::Ok != bmpSource.GetLastStatus()) return nullptr;
+	{
+		Gdiplus::Graphics gs(&bmpSource);
+		gs.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
+		gs.SetPixelOffsetMode(Gdiplus::PixelOffsetModeHighQuality);
+		gs.DrawImage(pBmp, 0, 0, nW, nSrcH);
+	}
+
+	//2) 倒影位图（预乘 alpha，与 XUI 其它位图一致）
+	Gdiplus::Bitmap *pBmpReflect = new Gdiplus::Bitmap(nW, nRefH, PixelFormat32bppPARGB);
+	if (pBmpReflect == nullptr || Gdiplus::Ok != pBmpReflect->GetLastStatus())
+	{
+		MMSafeDelete(pBmpReflect);
+		return nullptr;
+	}
+
+	Gdiplus::BitmapData dataSrc = {};
+	Gdiplus::BitmapData dataDst = {};
+	Gdiplus::Rect rcSrc(0, 0, nW, nSrcH);
+	Gdiplus::Rect rcDst(0, 0, nW, nRefH);
+
+	if (Gdiplus::Ok != bmpSource.LockBits(&rcSrc, Gdiplus::ImageLockModeRead, PixelFormat32bppARGB, &dataSrc))
+	{
+		MMSafeDelete(pBmpReflect);
+		return nullptr;
+	}
+	if (Gdiplus::Ok != pBmpReflect->LockBits(&rcDst, Gdiplus::ImageLockModeWrite, PixelFormat32bppPARGB, &dataDst))
+	{
+		bmpSource.UnlockBits(&dataSrc);
+		MMSafeDelete(pBmpReflect);
+		return nullptr;
+	}
+
+	const BYTE *pSrcBase = static_cast<const BYTE *>(dataSrc.Scan0);
+	BYTE *pDstBase = static_cast<BYTE *>(dataDst.Scan0);
+	const float fCx = (nW - 1) * 0.5f;			//图标水平中心
+	const float fHalfW = (fCx > 0.0f) ? fCx : 1.0f;
+
+	for (int y = 0; y < nRefH; ++y)
+	{
+		//垂直衰减：0 = 紧贴图标（接缝），1 = 倒影最远端
+		float fV = 1.0f - static_cast<float>(y) / static_cast<float>(nRefH);
+		if (fVertPow != 1.0f) fV = powf(fV, fVertPow);
+
+		//垂直镜像：倒影第 y 行取源图倒数第 y 行
+		const BYTE *pSrc = pSrcBase + static_cast<size_t>(nSrcH - 1 - y) * dataSrc.Stride;
+		BYTE *pDst = pDstBase + static_cast<size_t>(y) * dataDst.Stride;
+
+		for (int x = 0; x < nW; ++x)
+		{
+			const BYTE *ps = pSrc + static_cast<size_t>(x) * 4;
+			BYTE *pd = pDst + static_cast<size_t>(x) * 4;
+
+			//水平包络：fSideAlpha = 1.0 时整行均匀；否则中心 1.0、向两侧递减到底限
+			float fEnv = 1.0f;
+			if (fSideAlpha < 1.0f)
+			{
+				float fU = fabsf(static_cast<float>(x) - fCx) / fHalfW;	//0=中心 1=边缘
+				if (fU > 1.0f) fU = 1.0f;
+				fEnv = fSideAlpha + (1.0f - fSideAlpha) * powf(1.0f - fU, fSidePow);
+			}
+
+			//最终 alpha = 垂直衰减 * 水平包络 * 最大不透明度 * 源像素 alpha
+			const float fAlpha = fV * fEnv * fMaxAlpha * (static_cast<float>(ps[3]) / 255.0f);
+			const DWORD dwAlpha = static_cast<DWORD>(fAlpha * 255.0f + 0.5f);
+
+			//写入预乘 alpha
+			pd[0] = static_cast<BYTE>((ps[0] * dwAlpha + 127) / 255);	//B
+			pd[1] = static_cast<BYTE>((ps[1] * dwAlpha + 127) / 255);	//G
+			pd[2] = static_cast<BYTE>((ps[2] * dwAlpha + 127) / 255);	//R
+			pd[3] = static_cast<BYTE>(dwAlpha);							//A
+		}
+	}
+
+	bmpSource.UnlockBits(&dataSrc);
+	pBmpReflect->UnlockBits(&dataDst);
+
+	return pBmpReflect;
+}
+
 HBITMAP CDUIRenderEngine::CopyBitmap(HDC hDC, const CDUIRect &rcItem, Gdiplus::ARGB dwFilterColor)
 {
 	LPBYTE pBmpBits = NULL;

@@ -416,8 +416,8 @@ void CDUIListViewCtrl::SwitchListViewType(enDuiListViewType ListViewType)
 {
 	m_AttributeListViewType.SelectItem(ListViewType);
 	ListViewType = GetListViewType();
-	DuiInitAttriVisible(m_AttributeAutoCalcWidth, ListView_TileV == ListViewType);
-	DuiInitAttriVisible(m_AttributeAutoCalcHeight, ListView_List == ListViewType || ListView_TileH == ListViewType);
+	DuiInitAttriVisible(m_AttributeAutoCalcWidth, ListView_TileH == ListViewType || ListView_TileV == ListViewType);
+	DuiInitAttriVisible(m_AttributeAutoCalcHeight, ListView_List == ListViewType || ListView_TileH == ListViewType || ListView_TileV == ListViewType);
 
 	//tile
 	if (ListView_List != ListViewType)
@@ -2969,6 +2969,7 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeH()
 
 	bool bFindFirst = true;
 	bool bFindLast = true;
+	int nCurScrollRangeX = 0;
 	int nCurScrollRangeY = 0;
 	int nColumn = 0;
 	int nRow = 0;
@@ -2993,14 +2994,16 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeH()
 		//item.cx == 0
 		if (m_nWidthColumn == GetChildPaddingH())
 		{
-			if (nLeftFrom + pItem->GetFixedWidth() > rcItemRange.right && nLeftFrom > rcItemRange.left + nLeftOffset)
+			if (false == IsAutoCalcWidth()
+				&& nLeftFrom + pItem->GetFixedWidth() > rcItemRange.right 
+				&& nLeftFrom > rcItemRange.left + nLeftOffset)
 			{
 				nLeftFrom = rcItemRange.left + nLeftOffset;
 				nColumn = 0;
 				nRow++;
 			}
 		}
-		else
+		else if (false == IsAutoCalcWidth())
 		{
 			nColumn = m % m_nColumn;
 			nRow = m / m_nColumn;
@@ -3030,6 +3033,11 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeH()
 			rcModal.left += nColumn * m_nWidthColumn;
 			rcModal.right = rcModal.left + m_nWidthColumn - GetChildPaddingH();
 			nLeftFrom = rcModal.right + GetChildPaddingH();
+
+			if (IsAutoCalcWidth())
+			{
+				nColumn++;
+			}
 		}
 		
 		pItem->OnDuiSize(rcModal);
@@ -3053,9 +3061,11 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeH()
 				bFindLast = false;
 			}
 		}
+
+		nCurScrollRangeX = max(nCurScrollRangeX, rcItem.right + (IsLeftFromRange() ? 0 : GetChildPaddingH() / 2));
 	}
 
-	m_szTotalRange = { rcItemRange.GetWidth(), nCurScrollRangeY };
+	m_szTotalRange = { IsAutoCalcWidth() ? nCurScrollRangeX : rcItemRange.GetWidth(), nCurScrollRangeY };
 	UpdateScrollBar({ 0, max(0, nCurScrollRangeY - rcItemRange.GetHeight()) });
 
 	return;
@@ -3068,13 +3078,18 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeV()
 	SIZE szItem = GetSwitchTileItemSize();
 	CDUIRect rcRangeScroll(rcItemRange.left - rcItemRange.GetWidth(), rcItemRange.top, rcItemRange.right + rcItemRange.GetWidth(), rcItemRange.bottom);
 
-	//column
+	//row column
 	CalcVisibleCount();
 	CalcTileTypeInfo();
 
 	bool bFindFirst = true;
 	bool bFindLast = true;
 	int nCurScrollRangeX = 0;
+	int nCurScrollRangeY = 0;
+	int nColumn = 0;
+	int nRow = 0;
+	int nTopOffset = (IsTopFromRange() ? 0 : GetChildPaddingV() / 2);
+	int nTopFrom = rcItemRange.top + nTopOffset;
 	m_nFirstShowIndex = m_nLastShowIndex = -1;
 	for (int n = 0, m = 0; n < GetChildCount(); n++)
 	{
@@ -3091,9 +3106,25 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeV()
 			continue;
 		}
 
+		//item.cy == 0
+		if (m_nHeightRow == GetChildPaddingV())
+		{
+			if (false == IsAutoCalcHeight()
+				&& nTopFrom + pItem->GetFixedHeight() > rcItemRange.bottom
+				&& nTopFrom > rcItemRange.top + nTopOffset)
+			{
+				nTopFrom = rcItemRange.top + nTopOffset;
+				nRow = 0;
+				nColumn++;
+			}
+		}
+		else if (false == IsAutoCalcHeight())
+		{
+			nRow = m % m_nRow;
+			nColumn = m / m_nRow;
+		}
+
 		//item pos
-		int nRow = m % m_nRow;
-		int nColumn = m / m_nRow;
 		int nLeftOffset = (IsLeftFromRange() ? 0 : GetChildPaddingH() / 2);
 		int nLeft = rcItemRange.left + nColumn * m_nWidthColumn + nLeftOffset - szScrollPos.cx;
 		int nRight = nLeft + (pItem->GetFixedWidth() <= 0 ? m_nWidthColumn - GetChildPaddingH() : pItem->GetFixedWidth());
@@ -3101,11 +3132,27 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeV()
 		m++;
 
 		CDUIRect rcModal = rcItemRange;
-		int nTopOffset = IsTopFromRange() ? 0 : GetChildPaddingV() / 2;
 		rcModal.left = nLeft;
 		rcModal.right = nRight;
-		rcModal.top += nRow * m_nHeightRow + nTopOffset;
-		rcModal.bottom = rcModal.top + m_nHeightRow - GetChildPaddingV();
+
+		//item.cy == 0
+		if (m_nHeightRow == GetChildPaddingV())
+		{
+			rcModal.top = nTopFrom;
+			rcModal.bottom = rcModal.top + pItem->GetFixedHeight();
+			nTopFrom = rcModal.bottom + GetChildPaddingV();
+		}
+		else
+		{
+			rcModal.top += nRow * m_nHeightRow + nTopOffset;
+			rcModal.bottom = rcModal.top + m_nHeightRow - GetChildPaddingV();
+
+			if (IsAutoCalcHeight())
+			{
+				nRow++;
+			}
+		}
+
 		pItem->OnDuiSize(rcModal);
 
 		CDUIRect rcItem = pItem->GetAbsoluteRect();
@@ -3127,9 +3174,11 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeV()
 				bFindLast = false;
 			}
 		}
+
+		nCurScrollRangeY = max(nCurScrollRangeY, rcItem.bottom + (IsTopFromRange() ? 0 : GetChildPaddingV() / 2));
 	}
 
-	m_szTotalRange = { nCurScrollRangeX, rcItemRange.GetHeight() };
+	m_szTotalRange = { nCurScrollRangeX, IsAutoCalcHeight() ? nCurScrollRangeY : rcItemRange.GetHeight() };
 	UpdateScrollBar({ max(0, nCurScrollRangeX - rcItemRange.GetWidth()), 0 });
 
 	return;

@@ -65,6 +65,21 @@ public:
 	static Gdiplus::Bitmap * GenerateBitmap(const std::vector<BYTE> &vecFileData);
 	static Gdiplus::Bitmap * GenerateEllipseBitmap(Gdiplus::Bitmap *pBmp, const CDUISize &szGenerate);
 	static Gdiplus::Bitmap * GenerateThumbnail(Gdiplus::Bitmap *pBmp, const CDUISize &szGenerate);
+
+	//************************************
+	// Description:	生成图标倒影位图（宽 = szGenerate.cx，高 = szGenerate.cy * fReflectRatio）
+	// pBmp			: 图标位图（任意格式，内部统一转 32bppARGB 并缩放到 szGenerate）
+	// szGenerate	: 图标显示尺寸；倒影宽度与之相同
+	// fReflectRatio: 倒影高 / 图标高（0.3~0.6 常用），倒影不会超过图标自身高度
+	// fMaxAlpha	: 倒影最实处（贴图标边的水平中心）的不透明度（0~1）
+	// fVertPow		: 垂直衰减指数，1 = 线性，>1 消失更快
+	// fSideAlpha	: 两侧包络底限（0~1）。1.0 = 整行均匀（基础镜面）；
+	//				  0.35 = 水平中心最深、向两侧递减且边缘保留 35%
+	// fSidePow		: 向两侧递减的曲线指数，1 = 线性，>1 中心更集中
+	// 返回: 32bppPARGB 倒影位图，调用方负责 delete；失败返回 nullptr
+	//************************************
+	static Gdiplus::Bitmap * GenerateReflectionBitmap(Gdiplus::Bitmap *pBmp, const CDUISize &szGenerate,
+		float fReflectRatio = 0.45f, float fMaxAlpha = 0.45f, float fVertPow = 1.3f, float fSideAlpha = 0.35f, float fSidePow = 1.5f);
 	static HBITMAP CopyBitmap(HDC hDC, const CDUIRect &rcItem, Gdiplus::ARGB dwFilterColor = 0);
 	static HBITMAP CopyBitmap(HBITMAP hBitmap, Gdiplus::ARGB dwFilterColor = 0, bool bDisablePallete = false, float fAlpha = 1.0);
 	static Gdiplus::Bitmap * GetAlphaBitmap(HBITMAP hBitmap, bool bPreMultiplyArgb = true);
