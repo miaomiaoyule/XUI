@@ -161,15 +161,16 @@ bool CDUIDockBarCtrl::IsAutoCalcItemHeight()
 
 void CDUIDockBarCtrl::OnDragMoveBegin(CDUIControlBase *pDragCtrl)
 {
-	__super::OnDragMoveBegin(pDragCtrl);
-
-	//the item is dragged, stop the magnify effect and restore the item size,
-	//the item size is applied at once, the list view refresh is stopped while dragging
+	//the item is dragged, stop the magnify effect and restore the item size.
+	//the restore must be done before __super::OnDragMoveBegin, because the
+	//list view stops its refresh while the drag animation is running, then
+	//the item size and position can never be restored during the drag
 	StopEffect();
 	ResetItemScale();
-	ApplyItemLayout();
 
-	return;
+	RefreshView();
+
+	return __super::OnDragMoveBegin(pDragCtrl);
 }
 
 bool CDUIDockBarCtrl::InsertChild(CDUIControlBase *pChild, int nPos)
