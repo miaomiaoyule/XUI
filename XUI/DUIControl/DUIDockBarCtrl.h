@@ -11,8 +11,6 @@
 //dock bar default
 #define DockBar_IconSize_Default				(48)
 #define DockBar_ScaleMax_Default				(1.6f)
-#define DockBar_WaveDelay_Default				(50)
-#define DockBar_WaveDuration_Default			(320)
 #define DockBar_Scale_Epsilon					(0.002f)
 
 //item value which is set last time, keep it to avoid refresh loop
@@ -45,16 +43,12 @@ protected:
 	CDUIAttributeBool							m_AttributeAlignBottom = true;
 	CDUIAttributeFloat							m_AttributeScaleMax = DockBar_ScaleMax_Default; //max scale of icon
 	CDUIAttributeLong							m_AttributeEffectRange;						//mouse move effect range, 0 == auto
-	CDUIAttributeLong							m_AttributeWaveDelay = DockBar_WaveDelay_Default;		//wave delay of neighbor item, ms
-	CDUIAttributeLong							m_AttributeWaveDuration = DockBar_WaveDuration_Default;	//wave duration of single item, ms
 
 	//variant
 protected:
 	std::vector<float>							m_vecItemScale;								//current scale of every item
 	std::vector<tagDuiDockItemSet>				m_vecItemSet;								//value set to item last time
 	std::vector<CDUISize>						m_vecItemBaseSize;							//base size(pixel) of every item, captured at first layout
-	int											m_nEffectItem = -1;							//item which trigger the select wave
-	DWORD										m_dwEffectTick = 0;							//select wave start tick
 	int											m_nMousePosX = 0;							//mouse x in dock item range
 	bool										m_bMouseInDock = false;
 	UINT_PTR									m_uEffectTimer = 0;							//effect timer of window
@@ -71,18 +65,21 @@ public:
 	LPVOID QueryInterface(REFGUID Guid, DWORD dwQueryVer) override;
 	CMMString GetDescribe() const override;
 
-	//basic
+	//refresh
 	void RefreshView() override;
 
-	//layout of list view
+	//tile type
 	CDUISize GetSwitchTileItemSize() override;
-	bool IsAutoCalcChildPaddingH() override;
-	bool IsAutoCalcChildPaddingV() override;
 	bool IsAutoCalcItemWidth() override;
 	bool IsAutoCalcItemHeight() override;
 
+	//animation
+	void OnDragMoveBegin(CDUIControlBase *pDragCtrl) override;
+
 	//child
 	bool InsertChild(CDUIControlBase *pChild, int nPos = -1) override;
+	bool IsAutoCalcChildPaddingH() override;
+	bool IsAutoCalcChildPaddingV() override;
 	bool Remove(CDUIControlBase *pControl) override;
 	bool RemoveAt(int nIndex) override;
 	void RemoveAll() override;
@@ -100,10 +97,6 @@ public:
 	virtual void SetScaleMax(float fScaleMax);
 	virtual int GetEffectRange();
 	virtual void SetEffectRange(int nRange);
-	virtual int GetWaveDelay();
-	virtual void SetWaveDelay(int nDelay);
-	virtual int GetWaveDuration();
-	virtual void SetWaveDuration(int nDuration);
 
 	//item
 	virtual float GetItemScale(int nIndex);
@@ -136,11 +129,9 @@ protected:
 	int GetBaseItemCenterX(int nIndex);
 	int GetEffectRangeValue();
 
-	void StartEffect(int nIndex);
 	void StartEffectTimer();
 	void StopEffect();
 	void OnEffectElapse();
-	bool UpdateSelectEffect(DWORD dwTick);
 	bool UpdateMouseMoveEffect();
 	void OnDockAttributeChanged(bool bResetScale);
 };

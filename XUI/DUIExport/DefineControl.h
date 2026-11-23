@@ -242,7 +242,6 @@ enum enDuiKLineChartType
 enum enDuiDockBarEffectType
 {
 	DockBarEffect_None,
-	DockBarEffect_Select,
 	DockBarEffect_MouseMove,
 };
 

@@ -5,7 +5,6 @@
 
 //////////////////////////////////////////////////////////////////////////
 //scale lerp speed
-#define DockBar_Scale_Lerp_Wave					(0.60f)
 #define DockBar_Scale_Lerp_Mouse				(0.35f)
 
 //////////////////////////////////////////////////////////////////////////
@@ -19,7 +18,6 @@ CDUIDockBarCtrl::CDUIDockBarCtrl(void)
 	if (AttriCombox.vecItem.empty())
 	{
 		AttriCombox.vecItem.push_back({ DockBarEffect_None, _T("None") });
-		AttriCombox.vecItem.push_back({ DockBarEffect_Select, _T("Select") });
 		AttriCombox.vecItem.push_back({ DockBarEffect_MouseMove, _T("MouseMove") });
 	}
 
@@ -150,17 +148,6 @@ CDUISize CDUIDockBarCtrl::GetSwitchTileItemSize()
 	return szItem;
 }
 
-bool CDUIDockBarCtrl::IsAutoCalcChildPaddingH()
-{
-	//the item space is set by ChildPaddingH attribute, not calculated by list view
-	return false;
-}
-
-bool CDUIDockBarCtrl::IsAutoCalcChildPaddingV()
-{
-	return false;
-}
-
 bool CDUIDockBarCtrl::IsAutoCalcItemWidth()
 {
 	//the item width is calculated by dock bar(base size * scale), not by list view
@@ -172,6 +159,19 @@ bool CDUIDockBarCtrl::IsAutoCalcItemHeight()
 	return false;
 }
 
+void CDUIDockBarCtrl::OnDragMoveBegin(CDUIControlBase *pDragCtrl)
+{
+	__super::OnDragMoveBegin(pDragCtrl);
+
+	//the item is dragged, stop the magnify effect and restore the item size,
+	//the item size is applied at once, the list view refresh is stopped while dragging
+	StopEffect();
+	ResetItemScale();
+	ApplyItemLayout();
+
+	return;
+}
+
 bool CDUIDockBarCtrl::InsertChild(CDUIControlBase *pChild, int nPos)
 {
 	if (false == __super::InsertChild(pChild, nPos)) return false;
@@ -180,6 +180,17 @@ bool CDUIDockBarCtrl::InsertChild(CDUIControlBase *pChild, int nPos)
 	NeedRefreshView();
 
 	return true;
+}
+
+bool CDUIDockBarCtrl::IsAutoCalcChildPaddingH()
+{
+	//the item space is set by ChildPaddingH attribute, not calculated by list view
+	return false;
+}
+
+bool CDUIDockBarCtrl::IsAutoCalcChildPaddingV()
+{
+	return false;
 }
 
 bool CDUIDockBarCtrl::Remove(CDUIControlBase *pControl)
@@ -278,34 +289,6 @@ void CDUIDockBarCtrl::SetEffectRange(int nRange)
 	return;
 }
 
-int CDUIDockBarCtrl::GetWaveDelay()
-{
-	return m_AttributeWaveDelay.GetValue();
-}
-
-void CDUIDockBarCtrl::SetWaveDelay(int nDelay)
-{
-	if (nDelay < 0 || nDelay == GetWaveDelay()) return;
-
-	m_AttributeWaveDelay.SetValue(nDelay);
-
-	return;
-}
-
-int CDUIDockBarCtrl::GetWaveDuration()
-{
-	return m_AttributeWaveDuration.GetValue();
-}
-
-void CDUIDockBarCtrl::SetWaveDuration(int nDuration)
-{
-	if (nDuration <= 0 || nDuration == GetWaveDuration()) return;
-
-	m_AttributeWaveDuration.SetValue(nDuration);
-
-	return;
-}
-
 float CDUIDockBarCtrl::GetItemScale(int nIndex)
 {
 	if (nIndex < 0 || nIndex >= (int)m_vecItemScale.size()) return 1.0f;
@@ -367,8 +350,6 @@ void CDUIDockBarCtrl::InitProperty()
 	DuiCreateAttribute(m_AttributeAlignBottom, _T("AlignBottom"), _T(""), m_AttributeGroupDockBar);
 	DuiCreateAttribute(m_AttributeScaleMax, _T("ScaleMax"), _T(""), m_AttributeGroupDockBar);
 	DuiCreateAttribute(m_AttributeEffectRange, _T("EffectRange"), _T(""), m_AttributeGroupDockBar);
-	DuiCreateAttribute(m_AttributeWaveDelay, _T("WaveDelay"), _T(""), m_AttributeGroupDockBar);
-	DuiCreateAttribute(m_AttributeWaveDuration, _T("WaveDuration"), _T(""), m_AttributeGroupDockBar);
 
 	return;
 }
@@ -376,6 +357,8 @@ void CDUIDockBarCtrl::InitProperty()
 void CDUIDockBarCtrl::InitComplete()
 {
 	__super::InitComplete();
+
+	DuiInitAttriVisible(m_AttributeGroupListType, false);
 
 	//dock bar only support the horizontal tile layout
 	SwitchListViewType(ListView_TileH);
@@ -410,11 +393,7 @@ void CDUIDockBarCtrl::OnItemMouseEnter(CDUIControlBase *pControl, const DuiNotif
 
 	m_bMouseInDock = true;
 
-	if (DockBarEffect_Select == GetEffectType())
-	{
-		StartEffect(Notify.DuiNotifyExtend.ListView.nIndexItem);
-	}
-	else if (DockBarEffect_MouseMove == GetEffectType())
+	if (DockBarEffect_MouseMove == GetEffectType())
 	{
 		OnItemMouseMove(pControl, Notify);
 	}
@@ -467,7 +446,6 @@ void CDUIDockBarCtrl::ResetItemScale()
 
 	m_vecItemScale.assign(nCount, 1.0f);
 	m_vecItemSet.assign(nCount, tagDuiDockItemSet());
-	m_nEffectItem = -1;
 
 	return;
 }
@@ -595,21 +573,11 @@ int CDUIDockBarCtrl::GetEffectRangeValue()
 	return max(1, nMaxWidth) * 2;
 }
 
-void CDUIDockBarCtrl::StartEffect(int nIndex)
-{
-	if (DockBarEffect_Select != GetEffectType()) return;
-	if (nIndex < 0 || nIndex >= GetChildCount()) return;
-
-	m_nEffectItem = nIndex;
-	m_dwEffectTick = ::GetTickCount();
-
-	StartEffectTimer();
-
-	return;
-}
-
 void CDUIDockBarCtrl::StartEffectTimer()
 {
+	//the item is dragging, the effect is resumed after the drag is finished
+	if (IsAnimateDraging()) return;
+
 	if (m_uEffectTimer || NULL == m_pWndOwner) return;
 
 	m_uEffectTimer = m_pWndOwner->TimerTask(DockBar_Effect_Elapse, true, [this]()
@@ -638,12 +606,7 @@ void CDUIDockBarCtrl::StopEffect()
 void CDUIDockBarCtrl::OnEffectElapse()
 {
 	bool bContinue = false;
-	enDuiDockBarEffectType EffectType = GetEffectType();
-	if (DockBarEffect_Select == EffectType)
-	{
-		bContinue = UpdateSelectEffect(::GetTickCount());
-	}
-	else if (DockBarEffect_MouseMove == EffectType)
+	if (DockBarEffect_MouseMove == GetEffectType())
 	{
 		bContinue = UpdateMouseMoveEffect();
 	}
@@ -657,72 +620,6 @@ void CDUIDockBarCtrl::OnEffectElapse()
 	NeedRefreshView();
 
 	return;
-}
-
-bool CDUIDockBarCtrl::UpdateSelectEffect(DWORD dwTick)
-{
-	if (m_nEffectItem < 0) return false;
-
-	SyncItemScale();
-
-	int nCount = GetChildCount();
-	if (nCount <= 0)
-	{
-		m_nEffectItem = -1;
-
-		return false;
-	}
-
-	float fScaleMax = GetScaleMax();
-	int nDelay = max(0, GetWaveDelay());
-	int nDuration = max(1, GetWaveDuration());
-	int nElapsed = (int)(dwTick - m_dwEffectTick);
-
-	//whole wave time: the farthest item delay + single item duration
-	int nWaveFinish = 0;
-	for (int n = 0; n < nCount; n++)
-	{
-		nWaveFinish = max(nWaveFinish, abs(n - m_nEffectItem) * nDelay + nDuration);
-	}
-	bool bWaveEnd = nElapsed >= nWaveFinish;
-
-	bool bSettled = true;
-	for (int n = 0; n < nCount; n++)
-	{
-		float fTarget = 1.0f;
-		if (false == bWaveEnd)
-		{
-			//wave is spread from trigger item to both side
-			int nItemDelay = abs(n - m_nEffectItem) * nDelay;
-			if (nElapsed > nItemDelay)
-			{
-				float fProgress = (float)(nElapsed - nItemDelay) / (float)nDuration;
-				if (fProgress > 1.0f) fProgress = 1.0f;
-
-				//0 -> 1 -> 0, one shot wave
-				fTarget = 1.0f + (fScaleMax - 1.0f) * sinf(PI * fProgress);
-			}
-		}
-
-		float fScale = m_vecItemScale[n];
-		fScale += (fTarget - fScale) * DockBar_Scale_Lerp_Wave;
-		if (fTarget == 1.0f && fabs(fScale - 1.0f) <= DockBar_Scale_Epsilon)
-		{
-			fScale = 1.0f;
-		}
-		m_vecItemScale[n] = fScale;
-
-		if (fabs(fScale - 1.0f) > DockBar_Scale_Epsilon) bSettled = false;
-	}
-
-	if (bWaveEnd && bSettled)
-	{
-		m_nEffectItem = -1;
-
-		return false;
-	}
-
-	return true;
 }
 
 bool CDUIDockBarCtrl::UpdateMouseMoveEffect()
