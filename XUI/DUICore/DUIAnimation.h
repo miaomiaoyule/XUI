@@ -91,7 +91,6 @@ struct tagDragMove
 {
 	CDUIControlBase *					pControl = NULL;
 	CDUIRect							rcDest;
-	SIZE								szOffsetMove = {};
 };
 
 struct tagDuiDragCtrl

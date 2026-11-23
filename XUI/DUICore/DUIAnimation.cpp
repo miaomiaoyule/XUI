@@ -167,6 +167,11 @@ bool CDUIAnimation::RemoveAnimationData(int nAnimationID)
 }
 
 //////////////////////////////////////////////////////////////////////////
+//move factor of the displaced item, the speed is proportional to the
+//remaining distance, so the destination can be changed at any time
+#define Drag_Animate_Move_Factor			(0.35f)
+
+//////////////////////////////////////////////////////////////////////////
 DuiBegin_Message_Map(CDUIAnimationDrag, CDUINotifyPump)
 	Dui_On_Notify(DuiNotify_WinDragEnter, OnDuiWinDragEnter)
 	Dui_On_Notify(DuiNotify_WinDragLeave, OnDuiWinDragLeave)
@@ -367,45 +372,57 @@ void CDUIAnimationDrag::OnAnimationStep(int nAnimationID, int nTotalFrame, int n
 {
 	if (NULL == m_pBindContainerCtrl || NULL == m_pBindContainerCtrl->GetWndOwner()) return;
 
-	for (int nIndex = m_vecPosDest.size() - 1; nIndex >= 0; nIndex--)
+	bool bMoved = false;
+
+	for (int nIndex = (int)m_vecPosDest.size() - 1; nIndex >= 0; nIndex--)
 	{
 		tagDragMove &PosMoveDest = m_vecPosDest[nIndex];
 		CDUIControlBase *pMoveCtrl = PosMoveDest.pControl;
-		if (NULL == pMoveCtrl) continue;
-
-		CDUIRect rcItem = PosMoveDest.pControl->GetAbsoluteRect();
-		CDUIRect rcDest = PosMoveDest.rcDest;
-		SIZE szOffsetMove = PosMoveDest.szOffsetMove;
-
-		int nXOffset = szOffsetMove.cx, nYOffset = szOffsetMove.cy;
-		SIZE szOffset = { };
-		if (rcDest.left > rcItem.left)
+		if (NULL == pMoveCtrl)
 		{
-			szOffset.cx = min(nXOffset, rcDest.left - rcItem.left);
-		}
-		else
-		{
-			szOffset.cx = -min(nXOffset, rcItem.left - rcDest.left);
+			m_vecPosDest.erase(m_vecPosDest.begin() + nIndex);
+
+			continue;
 		}
 
-		if (rcDest.top > rcItem.top)
+		//the item moves toward the destination by a factor of the remaining
+		//distance, the speed is proportional to the remaining distance, so the
+		//move slows down smoothly at the end, and the destination can be changed
+		//at any time without position or speed jump
+		CDUIRect rcItem = pMoveCtrl->GetAbsoluteRect();
+		SIZE szDistance =
 		{
-			szOffset.cy = min(nYOffset, rcDest.top - rcItem.top);
-		}
-		else
+			PosMoveDest.rcDest.left - rcItem.left,
+			PosMoveDest.rcDest.top - rcItem.top
+		};
+
+		//reach the destination
+		if (0 == szDistance.cx && 0 == szDistance.cy)
 		{
-			szOffset.cy = -min(nYOffset, rcItem.top - rcDest.top);
+			m_vecPosDest.erase(m_vecPosDest.begin() + nIndex);
+
+			continue;
 		}
+
+		SIZE szOffset = 
+		{
+			(int)(szDistance.cx * Drag_Animate_Move_Factor),
+			(int)(szDistance.cy * Drag_Animate_Move_Factor)
+		};
+
+		//ensure the last pixels are moved, else the item never reaches the dest,
+		//the axis which is already at the dest must be kept, else the item
+		//jitters 1 pixel on that axis every frame
+		if (0 == szOffset.cx && 0 != szDistance.cx) szOffset.cx = (szDistance.cx > 0) ? 1 : -1;
+		if (0 == szOffset.cy && 0 != szDistance.cy) szOffset.cy = (szDistance.cy > 0) ? 1 : -1;
 
 		pMoveCtrl->MovePosition(szOffset);
 
-		//达到目标
-		rcItem = PosMoveDest.pControl->GetAbsoluteRect();
-		if (rcItem.left == rcDest.left && rcItem.top == rcDest.top)
-		{
-			m_vecPosDest.erase(m_vecPosDest.begin() + nIndex);
-		}
+		bMoved = true;
 	}
+
+	//repaint only when something is moving, not every animation frame
+	if (false == bMoved) return;
 
 	m_pBindContainerCtrl->Invalidate();
 	UpdateWindow(m_pBindContainerCtrl->GetWndOwner()->GetWndHandle());
@@ -736,6 +753,8 @@ void CDUIAnimationDrag::SetPosDest(CDUIControlBase *pControl, CDUIRect rcPosDest
 {
 	if (NULL == pControl) return;
 
+	//only the destination is saved, the item moves toward it by the remaining
+	//distance, so the destination can be changed during the move safely
 	CDUIRect rcItem = pControl->GetAbsoluteRect();
 	if (rcItem == rcPosDest) return;
 
@@ -743,12 +762,7 @@ void CDUIAnimationDrag::SetPosDest(CDUIControlBase *pControl, CDUIRect rcPosDest
 	PosMoveDest.pControl = pControl;
 	PosMoveDest.rcDest = rcPosDest;
 
-	int nWidth = abs(rcPosDest.left - rcItem.left);
-	int nHeight = abs(rcPosDest.top - rcItem.top);
-	PosMoveDest.szOffsetMove.cx = nWidth < ANIMATE_FRAME && nWidth > 0 ? 1 : nWidth / ANIMATE_FRAME;
-	PosMoveDest.szOffsetMove.cy = nHeight < ANIMATE_FRAME && nHeight > 0 ? 1 : nHeight / ANIMATE_FRAME;
-
-	for (int nIndex = 0; nIndex < m_vecPosDest.size(); nIndex++)
+	for (int nIndex = 0; nIndex < (int)m_vecPosDest.size(); nIndex++)
 	{
 		if (m_vecPosDest[nIndex].pControl == pControl)
 		{
