@@ -15,7 +15,7 @@ class XUI_API CDUIAttributeFloat
 	MMDeclare_ClassName(CDUIAttributeFloat)
 
 public:
-	CDUIAttributeFloat();
+	CDUIAttributeFloat(float fValue = 0.0f);
 	virtual ~CDUIAttributeFloat(void);
 
 protected:

@@ -5,7 +5,8 @@
 DuiImplement_CreateAttribute(CDUIAttributeFloat)
 MMImplement_ClassName(CDUIAttributeFloat)
 
-CDUIAttributeFloat::CDUIAttributeFloat()
+CDUIAttributeFloat::CDUIAttributeFloat(float fValue)
+	: m_fValue(fValue)
 {
 #ifdef DUI_DESIGN
 	m_DuiAttributeType = DuiAttribute_Float;
