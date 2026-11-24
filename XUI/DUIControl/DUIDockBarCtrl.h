@@ -46,7 +46,6 @@ protected:
 	CDUIAttributeFloat							m_AttributeScaleMax = DockBar_ScaleMax_Default; //max scale of icon
 	CDUIAttributeLong							m_AttributeEffectRange;							//icon count affected each side of mouse, 0 == auto
 	CDUIAttributeFloat							m_AttributeReflectionRatio = DockBar_ReflectionRatio_Default; //reflection height / icon height of the item background image(icon + reflection)
-	CDUIAttriImageSection						m_AttributeDockImageBk;							//background of the base icon area, the magnified part and the reflection are not included
 	
 	//variant
 protected:
@@ -71,6 +70,7 @@ public:
 	CMMString GetDescribe() const override;
 
 	//refresh
+	CDUIRect GetBorderRect() override;
 	void RefreshView() override;
 
 	//tile type
@@ -92,9 +92,6 @@ public:
 	//dock bar
 	virtual enDuiDockBarEffectType GetEffectType();
 	virtual void SetEffectType(enDuiDockBarEffectType EffectType);
-	virtual tagDuiImageSection GetDockImageBk();
-	virtual void SetDockImageBk(const tagDuiImageSection &ImageSection);
-	virtual CDUIRect GetDockImageBkRect();
 	virtual float GetReflectionRatio();
 	virtual void SetReflectionRatio(float fRatio);
 
@@ -122,10 +119,6 @@ protected:
 	void InitProperty() override;
 	void InitComplete() override;
 
-	//paint
-protected:
-	void PaintBkImage(HDC hDC) override;
-
 	//notify
 protected:
 	void OnItemMouseMove(CDUIControlBase *pControl, const DuiNotify &Notify);
@@ -141,7 +134,7 @@ protected:
 	void ApplyItemLayout();
 	SIZE GetBaseItemSize(int nIndex);
 	int GetBaseItemCenterX(int nIndex);
-	int GetEffectRangeValue();
+	float GetMouseItemIndex();
 	void UpdateMousePosX(int nAbsoluteX);
 
 	void StartEffectTimer();
