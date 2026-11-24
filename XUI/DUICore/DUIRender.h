@@ -76,10 +76,14 @@ public:
 	// fSideAlpha	: 两侧包络底限（0~1）。1.0 = 整行均匀（基础镜面）；
 	//				  0.35 = 水平中心最深、向两侧递减且边缘保留 35%
 	// fSidePow		: 向两侧递减的曲线指数，1 = 线性，>1 中心更集中
+	// fDotRadiusRatio: 倒影中心圆点（类似 macOS 的运行指示灯）的半径 / 倒影宽度，
+	//				  0 = 不画圆点（默认）；0.06 = 直径约为宽度的 12%
+	// dwDotColor	: 圆点颜色（ARGB，含 alpha），仅在 fDotRadiusRatio > 0 时生效
 	// 返回: 32bppPARGB 倒影位图，调用方负责 delete；失败返回 nullptr
 	//************************************
 	static Gdiplus::Bitmap * GenerateReflectionBitmap(Gdiplus::Bitmap *pBmp, const CDUISize &szGenerate,
-		float fReflectRatio = 0.45f, float fMaxAlpha = 0.45f, float fVertPow = 1.3f, float fSideAlpha = 0.35f, float fSidePow = 1.5f);
+		float fReflectRatio = 0.45f, float fMaxAlpha = 0.45f, float fVertPow = 1.3f, float fSideAlpha = 0.35f, float fSidePow = 1.5f,
+		float fDotRadiusRatio = 0.0f, Gdiplus::ARGB dwDotColor = 0xFFF5F5F5);
 	static HBITMAP CopyBitmap(HDC hDC, const CDUIRect &rcItem, Gdiplus::ARGB dwFilterColor = 0);
 	static HBITMAP CopyBitmap(HBITMAP hBitmap, Gdiplus::ARGB dwFilterColor = 0, bool bDisablePallete = false, float fAlpha = 1.0);
 	static Gdiplus::Bitmap * GetAlphaBitmap(HBITMAP hBitmap, bool bPreMultiplyArgb = true);

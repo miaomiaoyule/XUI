@@ -2221,7 +2221,8 @@ Gdiplus::Bitmap * CDUIRenderEngine::GenerateThumbnail(Gdiplus::Bitmap *pBmp, con
 }
 
 Gdiplus::Bitmap * CDUIRenderEngine::GenerateReflectionBitmap(Gdiplus::Bitmap *pBmp, const CDUISize &szGenerate,
-	float fReflectRatio, float fMaxAlpha, float fVertPow, float fSideAlpha, float fSidePow)
+	float fReflectRatio, float fMaxAlpha, float fVertPow, float fSideAlpha, float fSidePow,
+	float fDotRadiusRatio, Gdiplus::ARGB dwDotColor)
 {
 	if (pBmp == nullptr || szGenerate.cx <= 0 || szGenerate.cy <= 0) return nullptr;
 
@@ -2315,6 +2316,51 @@ Gdiplus::Bitmap * CDUIRenderEngine::GenerateReflectionBitmap(Gdiplus::Bitmap *pB
 	}
 
 	bmpSource.UnlockBits(&dataSrc);
+
+	//3) 倒影中心的圆点（运行指示灯），画在倒影之上，1 像素羽化边，fDotRadiusRatio == 0 时不画
+	if (fDotRadiusRatio > 0.0f)
+	{
+		float fDotR = nW * fDotRadiusRatio;
+		if (fDotR < 1.0f) fDotR = 1.0f;
+		float fDotCx = (nW - 1) * 0.5f;
+		float fDotCy = (nRefH - 1) * 0.5f;
+
+		BYTE cbA = (BYTE)((dwDotColor >> 24) & 0xFF);
+		BYTE cbR = (BYTE)((dwDotColor >> 16) & 0xFF);
+		BYTE cbG = (BYTE)((dwDotColor >> 8) & 0xFF);
+		BYTE cbB = (BYTE)(dwDotColor & 0xFF);
+
+		int nLeft = max(0, static_cast<int>(fDotCx - fDotR - 1.0f));
+		int nRight = min(nW - 1, static_cast<int>(fDotCx + fDotR + 1.0f));
+		int nTop = max(0, static_cast<int>(fDotCy - fDotR - 1.0f));
+		int nBottom = min(nRefH - 1, static_cast<int>(fDotCy + fDotR + 1.0f));
+
+		for (int y = nTop; y <= nBottom; ++y)
+		{
+			BYTE *pDst = pDstBase + static_cast<size_t>(y) * dataDst.Stride;
+			for (int x = nLeft; x <= nRight; ++x)
+			{
+				float fDx = static_cast<float>(x) - fDotCx;
+				float fDy = static_cast<float>(y) - fDotCy;
+				float fCover = fDotR - sqrtf(fDx * fDx + fDy * fDy);
+				if (fCover <= 0.0f) continue;
+				if (fCover > 1.0f) fCover = 1.0f;
+
+				BYTE *pd = pDst + static_cast<size_t>(x) * 4;
+
+				//预乘 alpha 的 source-over 合成：out = dot * dotA + src * (1 - dotA)
+				float fDotA = (cbA / 255.0f) * fCover;
+				float fSrcA = pd[3] / 255.0f;
+				float fOutA = fDotA + fSrcA * (1.0f - fDotA);
+
+				pd[0] = static_cast<BYTE>(cbB * fDotA + pd[0] * (1.0f - fDotA) + 0.5f);
+				pd[1] = static_cast<BYTE>(cbG * fDotA + pd[1] * (1.0f - fDotA) + 0.5f);
+				pd[2] = static_cast<BYTE>(cbR * fDotA + pd[2] * (1.0f - fDotA) + 0.5f);
+				pd[3] = static_cast<BYTE>(fOutA * 255.0f + 0.5f);
+			}
+		}
+	}
+
 	pBmpReflect->UnlockBits(&dataDst);
 
 	return pBmpReflect;

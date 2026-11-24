@@ -12,6 +12,8 @@
 #define DockBar_IconSize_Default				(48)
 #define DockBar_ScaleMax_Default				(1.6f)
 #define DockBar_Scale_Epsilon					(0.002f)
+#define DockBar_EffectRange_Icon_Default		(2)				//icons affected each side of mouse
+#define DockBar_ReflectionRatio_Default			(0.45f)			//reflection height / icon height, same as GenerateReflectionBitmap
 
 //item value which is set last time, keep it to avoid refresh loop
 struct tagDuiDockItemSet
@@ -42,14 +44,17 @@ protected:
 	CDUIAttributeCombox							m_AttributeEffectType;
 	CDUIAttributeBool							m_AttributeAlignBottom = true;
 	CDUIAttributeFloat							m_AttributeScaleMax = DockBar_ScaleMax_Default; //max scale of icon
-	CDUIAttributeLong							m_AttributeEffectRange;						//mouse move effect range, 0 == auto
-
+	CDUIAttributeLong							m_AttributeEffectRange;							//icon count affected each side of mouse, 0 == auto
+	CDUIAttributeFloat							m_AttributeReflectionRatio = DockBar_ReflectionRatio_Default; //reflection height / icon height of the item background image(icon + reflection)
+	CDUIAttriImageSection						m_AttributeDockImageBk;							//background of the base icon area, the magnified part and the reflection are not included
+	
 	//variant
 protected:
 	std::vector<float>							m_vecItemScale;								//current scale of every item
 	std::vector<tagDuiDockItemSet>				m_vecItemSet;								//value set to item last time
 	std::vector<CDUISize>						m_vecItemBaseSize;							//base size(pixel) of every item, captured at first layout
 	int											m_nMousePosX = 0;							//mouse x in dock item range
+	int											m_nMouseRefPosX = 0;						//item range left captured while the effect is at rest
 	bool										m_bMouseInDock = false;
 	UINT_PTR									m_uEffectTimer = 0;							//effect timer of window
 
@@ -87,6 +92,11 @@ public:
 	//dock bar
 	virtual enDuiDockBarEffectType GetEffectType();
 	virtual void SetEffectType(enDuiDockBarEffectType EffectType);
+	virtual tagDuiImageSection GetDockImageBk();
+	virtual void SetDockImageBk(const tagDuiImageSection &ImageSection);
+	virtual CDUIRect GetDockImageBkRect();
+	virtual float GetReflectionRatio();
+	virtual void SetReflectionRatio(float fRatio);
 
 	//icon
 	virtual bool IsAlignBottom();
@@ -112,6 +122,10 @@ protected:
 	void InitProperty() override;
 	void InitComplete() override;
 
+	//paint
+protected:
+	void PaintBkImage(HDC hDC) override;
+
 	//notify
 protected:
 	void OnItemMouseMove(CDUIControlBase *pControl, const DuiNotify &Notify);
@@ -128,6 +142,7 @@ protected:
 	SIZE GetBaseItemSize(int nIndex);
 	int GetBaseItemCenterX(int nIndex);
 	int GetEffectRangeValue();
+	void UpdateMousePosX(int nAbsoluteX);
 
 	void StartEffectTimer();
 	void StopEffect();
