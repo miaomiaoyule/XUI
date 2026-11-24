@@ -89,10 +89,6 @@ void CDUIDockBarCtrl::OnNotify(CDUIControlBase *pControl, const DuiNotify &Notif
 		{
 			OnItemMouseMove(pControl, Notify);
 		}
-		else if (DuiNotify_ItemMouseLeave == Notify.NotifyType)
-		{
-			OnItemMouseLeave(pControl, Notify);
-		}
 		else if (DuiNotify_VisibleChanged == Notify.NotifyType)
 		{
 			if (false == IsVisible())
@@ -397,7 +393,7 @@ bool CDUIDockBarCtrl::OnDuiMouseMove(const CDUIPoint &pt, const DuiMessage &Msg)
 	{
 		m_bMouseInDock = true;
 
-		UpdateMousePosX(pt.x);
+		m_nMousePosX = pt.x;
 
 		StartEffectTimer();
 	}
@@ -409,11 +405,7 @@ void CDUIDockBarCtrl::OnDuiMouseLeave(const CDUIPoint &pt, const DuiMessage &Msg
 {
 	__super::OnDuiMouseLeave(pt, Msg);
 
-	//mouse may move from dock bar into its item, not leave the dock bar
-	if (false == GetAbsoluteRect().PtInRect(pt))
-	{
-		m_bMouseInDock = false;
-	}
+	m_bMouseInDock = false;
 
 	if (DockBarEffect_MouseMove == GetEffectType())
 	{
@@ -473,7 +465,7 @@ void CDUIDockBarCtrl::OnItemMouseMove(CDUIControlBase *pControl, const DuiNotify
 
 	m_bMouseInDock = true;
 
-	UpdateMousePosX(Notify.ptMouse.x);
+	m_nMousePosX = Notify.ptMouse.x;
 
 	StartEffectTimer();
 
@@ -489,23 +481,6 @@ void CDUIDockBarCtrl::OnItemMouseEnter(CDUIControlBase *pControl, const DuiNotif
 	if (DockBarEffect_MouseMove == GetEffectType())
 	{
 		OnItemMouseMove(pControl, Notify);
-	}
-
-	return;
-}
-
-void CDUIDockBarCtrl::OnItemMouseLeave(CDUIControlBase *pControl, const DuiNotify &Notify)
-{
-	//move between items: the leave of old item is earlier than enter of new item,
-	//so judge by mouse position, avoid effect break when mouse across item gap
-	if (false == GetAbsoluteRect().PtInRect(Notify.ptMouse))
-	{
-		m_bMouseInDock = false;
-	}
-
-	if (DockBarEffect_MouseMove == GetEffectType())
-	{
-		StartEffectTimer();
 	}
 
 	return;
@@ -630,37 +605,21 @@ SIZE CDUIDockBarCtrl::GetBaseItemSize(int nIndex)
 	return szBase;
 }
 
-int CDUIDockBarCtrl::GetBaseItemCenterX(int nIndex)
-{
-	//base center is calculated by scale 1 accumulate layout, so the mouse hit
-	//is stable when item is magnified
-	int nSpace = GetChildPaddingH();
-	int nLeftFrom = (IsLeftFromRange() ? 0 : nSpace / 2);
-	for (int n = 0; n < GetChildCount(); n++)
-	{
-		CDUIListItemCtrl *pItem = GetChildAt(n);
-		if (NULL == pItem || false == pItem->IsVisible()) continue;
-
-		SIZE szBase = GetBaseItemSize(n);
-		if (n == nIndex) return nLeftFrom + (int)szBase.cx / 2;
-
-		nLeftFrom += (int)szBase.cx + nSpace;
-	}
-
-	return 0;
-}
-
 float CDUIDockBarCtrl::GetMouseItemIndex()
 {
-	//the mouse x is converted to a float icon index by the base item centers,
-	//the nearest icon index plus the fraction toward the neighbor on the side
-	//the mouse leans to. the item scale only depends on the index distance to
-	//it, so the icons on both sides of the mouse are always symmetric, the
-	//pixel measurement error can never make one side larger than the other
+	//the mouse hit is computed by the current visual rects of the items, not
+	//the base(scale 1) positions: the icons are magnified while the effect
+	//runs, the visual center of the magnified icon is just where the mouse
+	//is, while the base position of the same point is shifted by the growth
+	//of the icons and the re-place of the bar, so the hit by the base
+	//positions always leans to one side and that side gets more boost.
+	//the index is the nearest icon plus the fraction toward the neighbor on
+	//the side the mouse leans to, icons at the same index distance get the
+	//same boost, so both sides of the mouse are always symmetric
 	int nCount = GetChildCount();
 	if (nCount <= 0 || false == m_bMouseInDock) return -1.0f;
 
-	//the visible icon whose base center is nearest to the mouse
+	//the visible icon whose visual center is nearest to the mouse
 	int nNearest = -1;
 	int nNearestCenter = 0;
 	int nMinDistance = -1;
@@ -669,7 +628,8 @@ float CDUIDockBarCtrl::GetMouseItemIndex()
 		CDUIListItemCtrl *pItem = GetChildAt(n);
 		if (NULL == pItem || false == pItem->IsVisible()) continue;
 
-		int nCenter = GetBaseItemCenterX(n);
+		CDUIRect rcItem = pItem->GetAbsoluteRect();
+		int nCenter = (rcItem.left + rcItem.right) / 2;
 		int nDistance = abs(m_nMousePosX - nCenter);
 		if (nNearest < 0 || nDistance < nMinDistance)
 		{
@@ -691,8 +651,9 @@ float CDUIDockBarCtrl::GetMouseItemIndex()
 			CDUIListItemCtrl *pItem = GetChildAt(n);
 			if (NULL == pItem || false == pItem->IsVisible()) continue;
 
+			CDUIRect rcItem = pItem->GetAbsoluteRect();
 			nNeighbor = n;
-			nNeighborCenter = GetBaseItemCenterX(n);
+			nNeighborCenter = (rcItem.left + rcItem.right) / 2;
 
 			break;
 		}
@@ -704,8 +665,9 @@ float CDUIDockBarCtrl::GetMouseItemIndex()
 			CDUIListItemCtrl *pItem = GetChildAt(n);
 			if (NULL == pItem || false == pItem->IsVisible()) continue;
 
+			CDUIRect rcItem = pItem->GetAbsoluteRect();
 			nNeighbor = n;
-			nNeighborCenter = GetBaseItemCenterX(n);
+			nNeighborCenter = (rcItem.left + rcItem.right) / 2;
 
 			break;
 		}
@@ -721,34 +683,13 @@ float CDUIDockBarCtrl::GetMouseItemIndex()
 	}
 	else
 	{
-		//no visible neighbor on this side, extrapolate by one slot of the icon
-		int nSlot = (int)GetBaseItemSize(nNearest).cx + GetChildPaddingH();
+		//no visible neighbor on this side, extrapolate by one visual slot
+		CDUIListItemCtrl *pItem = GetChildAt(nNearest);
+		int nSlot = (NULL != pItem ? pItem->GetAbsoluteRect().GetWidth() : 0) + GetChildPaddingH();
 		if (nSlot > 0) fIndex += (float)(m_nMousePosX - nNearestCenter) / (float)nSlot;
 	}
 
 	return fIndex;
-}
-
-void CDUIDockBarCtrl::UpdateMousePosX(int nAbsoluteX)
-{
-	//the mouse x is measured against the item range left captured at rest.
-	//if it is measured against the current left edge, it feeds back: the
-	//effect changes the item width, the total width changes, the dock bar
-	//resized by AutoCalcWidth is placed again, the item enter or leave fires
-	//by the shift, then the mouse x relative to the shifted edge changes,
-	//the scales change again and the total width flips back, the whole bar
-	//jitters 1 pixel left and right even the mouse does not move.
-	//the left edge is stable while the effect timer is stopped, so capture
-	//it only then, the mouse x is never moved by the effect itself
-	CDUIRect rcRange = GetLayoutRangeOfItem();
-	if (0 == m_uEffectTimer)
-	{
-		m_nMouseRefPosX = rcRange.left;
-	}
-
-	m_nMousePosX = nAbsoluteX - m_nMouseRefPosX;
-
-	return;
 }
 
 void CDUIDockBarCtrl::StartEffectTimer()

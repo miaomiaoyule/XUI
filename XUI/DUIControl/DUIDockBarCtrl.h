@@ -52,8 +52,7 @@ protected:
 	std::vector<float>							m_vecItemScale;								//current scale of every item
 	std::vector<tagDuiDockItemSet>				m_vecItemSet;								//value set to item last time
 	std::vector<CDUISize>						m_vecItemBaseSize;							//base size(pixel) of every item, captured at first layout
-	int											m_nMousePosX = 0;							//mouse x in dock item range
-	int											m_nMouseRefPosX = 0;						//item range left captured while the effect is at rest
+	int											m_nMousePosX = 0;							//mouse x of the window, the hit is computed by the current item rects
 	bool										m_bMouseInDock = false;
 	UINT_PTR									m_uEffectTimer = 0;							//effect timer of window
 
@@ -123,7 +122,6 @@ protected:
 protected:
 	void OnItemMouseMove(CDUIControlBase *pControl, const DuiNotify &Notify);
 	void OnItemMouseEnter(CDUIControlBase *pControl, const DuiNotify &Notify);
-	void OnItemMouseLeave(CDUIControlBase *pControl, const DuiNotify &Notify);
 
 	//help
 protected:
@@ -133,9 +131,7 @@ protected:
 
 	void ApplyItemLayout();
 	SIZE GetBaseItemSize(int nIndex);
-	int GetBaseItemCenterX(int nIndex);
 	float GetMouseItemIndex();
-	void UpdateMousePosX(int nAbsoluteX);
 
 	void StartEffectTimer();
 	void StopEffect();

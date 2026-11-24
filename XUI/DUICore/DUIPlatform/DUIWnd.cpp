@@ -470,10 +470,9 @@ LRESULT CDUIWnd::OnMouseMove(WPARAM wParam, LPARAM lParam)
 			::SendMessage(m_hWndTooltip, TTM_TRACKACTIVATE, false, (LPARAM)&m_ToolTip);
 #endif
 		}
-		auto vecMouseEnterCtrl = m_vecMouseEnterCtrl;
-		for (int n = vecMouseEnterCtrl.size() - 1; n >= 0; n--)
+		for (int n = (int)m_vecMouseEnterCtrl.size() - 1; n >= 0; n--)
 		{
-			CDUIControlBase *pControl = vecMouseEnterCtrl[n];
+			CDUIControlBase *pControl = m_vecMouseEnterCtrl[n];
 			if (NULL == pControl) continue;
 
 			CDUIRect rcCtrl = pControl->GetAbsoluteRect();
@@ -485,7 +484,7 @@ LRESULT CDUIWnd::OnMouseMove(WPARAM wParam, LPARAM lParam)
 				msgLeave.pMsgCtrl = pControl;
 				pControl->OnDuiMouseLeave(pt, msgLeave);
 
-				m_vecMouseEnterCtrl.erase(std::remove(m_vecMouseEnterCtrl.begin(), m_vecMouseEnterCtrl.end(), pControl), m_vecMouseEnterCtrl.end());
+				m_vecMouseEnterCtrl.erase(m_vecMouseEnterCtrl.begin() + n);
 			}
 		}
 
@@ -592,8 +591,28 @@ CDUIWnd * CDUIWnd::GetWndOwner()
 
 void CDUIWnd::DispatchModelMouseEvent(CDUIControlBase *pCtrl, MouseEventPtr pFunc, const CDUIPoint &pt, const DuiMessage &Msg, bool bClick)
 {
-	if (pCtrl
-		&& (false == bClick || pCtrl->IsClickTransmit())
+	if (NULL == pCtrl)
+	{
+		return;
+	}
+	if (pFunc == &CDUIControlBase::OnDuiMouseEnter)
+	{
+		CDUIControlBase *pParentCtrl = pCtrl->GetParent();
+		while (pParentCtrl)
+		{
+			if (false == pParentCtrl->IsMouseThrough()
+				&& std::find(m_vecMouseEnterCtrl.begin(), m_vecMouseEnterCtrl.end(), pParentCtrl) == m_vecMouseEnterCtrl.end())
+			{
+				m_vecMouseEnterCtrl.push_back(pParentCtrl);
+				(pParentCtrl->*pFunc)(pt, Msg);
+			}
+
+			pParentCtrl = pParentCtrl->GetParent();
+		}
+
+		return;
+	}
+	if ((false == bClick || pCtrl->IsClickTransmit())
 		&& pCtrl->GetOwnerModelCtrl()
 		&& pCtrl->GetOwnerModelCtrl()->IsEnabled()
 		&& false == pCtrl->GetOwnerModelCtrl()->IsMouseThrough()
@@ -605,18 +624,7 @@ void CDUIWnd::DispatchModelMouseEvent(CDUIControlBase *pCtrl, MouseEventPtr pFun
 		)
 	{
 		CDUIControlBase *pOwnerModelCtrl = pCtrl->GetOwnerModelCtrl();
-		if (pFunc == &CDUIControlBase::OnDuiMouseEnter)
-		{
-			if (std::find(m_vecMouseEnterCtrl.begin(), m_vecMouseEnterCtrl.end(), pOwnerModelCtrl) == m_vecMouseEnterCtrl.end())
-			{
-				m_vecMouseEnterCtrl.push_back(pOwnerModelCtrl);
-				(pOwnerModelCtrl->*pFunc)(pt, Msg);
-			}
-		}
-		else
-		{
-			(pOwnerModelCtrl->*pFunc)(pt, Msg);
-		}
+		(pOwnerModelCtrl->*pFunc)(pt, Msg);
 	}
 
 	return;
