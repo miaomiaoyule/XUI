@@ -52,6 +52,7 @@ protected:
 	std::vector<float>							m_vecItemScale;								//current scale of every item
 	std::vector<tagDuiDockItemSet>				m_vecItemSet;								//value set to item last time
 	std::vector<CDUISize>						m_vecItemBaseSize;							//base size(pixel) of every item, captured at first layout
+	std::vector<CDUIListItemCtrl*>				m_vecItemBaseCtrl;							//the item the base size belongs to, the item may be removed and inserted again while it is dragged
 	int											m_nMousePosX = 0;							//mouse x of the window, the hit is computed by the current item rects
 	bool										m_bMouseInDock = false;
 	UINT_PTR									m_uEffectTimer = 0;							//effect timer of window
@@ -128,9 +129,11 @@ protected:
 	void SyncItemScale();
 	void ResetItemScale();
 	void ResetItemSet();
+	void RecaptureBaseSize();
 
 	void ApplyItemLayout();
 	SIZE GetBaseItemSize(int nIndex);
+	SIZE CaptureBaseSize(CDUIControlBase *pControl, float fScale);
 	float GetMouseItemIndex();
 
 	void StartEffectTimer();

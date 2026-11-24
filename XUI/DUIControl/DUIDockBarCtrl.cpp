@@ -68,11 +68,13 @@ void CDUIDockBarCtrl::OnDpiChanged(int nScalePre)
 	__super::OnDpiChanged(nScalePre);
 
 	StopEffect();
-	ResetItemScale();
 	ResetItemSet();
 
-	//the item fixed size is rescaled, the base size must be captured again
-	m_vecItemBaseSize.clear();
+	//the base size is in pixel and the item size is rescaled by the new dpi,
+	//so the base must be captured again by the current size, and the current
+	//scale must be kept: the item size is base * scale, resetting the scale
+	//before the capture would take the magnified size as the base
+	RecaptureBaseSize();
 
 	return;
 }
@@ -241,9 +243,29 @@ void CDUIDockBarCtrl::OnDragMoveBegin(CDUIControlBase *pDragCtrl)
 
 bool CDUIDockBarCtrl::InsertChild(CDUIControlBase *pChild, int nPos)
 {
+	//the item is not laid out by the dock bar yet, its fixed size is the size
+	//the user set, so the base must be captured before the item is inserted:
+	//after that the effect may write the magnified size to it and the
+	//magnified size would become the base for ever
+	SIZE szBase = CaptureBaseSize(pChild, 1.0f);
+
 	if (false == __super::InsertChild(pChild, nPos)) return false;
 
 	ResetItemScale();
+
+	//the base of the new item is the one captured before the insertion
+	for (int n = 0; n < GetChildCount(); n++)
+	{
+		if (GetChildAt(n) != pChild) continue;
+
+		if (n < (int)m_vecItemBaseSize.size() && szBase.cx > 0 && szBase.cy > 0)
+		{
+			m_vecItemBaseSize[n] = szBase;
+		}
+
+		break;
+	}
+
 	NeedRefreshView();
 
 	return true;
@@ -489,20 +511,67 @@ void CDUIDockBarCtrl::OnItemMouseEnter(CDUIControlBase *pControl, const DuiNotif
 void CDUIDockBarCtrl::SyncItemScale()
 {
 	int nCount = GetChildCount();
-	if ((int)m_vecItemScale.size() == nCount
-		&& (int)m_vecItemSet.size() == nCount
-		&& (int)m_vecItemBaseSize.size() == nCount) return;
 
+	//the state belongs to the item itself, not to the index: the dragged item
+	//is removed and inserted again, the index copy would give the state of the
+	//neighbor item to it, the item is laid out by the wrong base and looks
+	//bigger or smaller than it is
+	bool bSame = ((int)m_vecItemBaseCtrl.size() == nCount
+		&& (int)m_vecItemBaseSize.size() == nCount
+		&& (int)m_vecItemScale.size() == nCount
+		&& (int)m_vecItemSet.size() == nCount);
+	if (bSame)
+	{
+		for (int n = 0; n < nCount; n++)
+		{
+			if (GetChildAt(n) == m_vecItemBaseCtrl[n]) continue;
+
+			bSame = false;
+
+			break;
+		}
+	}
+	if (bSame) return;
+
+	std::vector<CDUIListItemCtrl*> vecCtrlOld = m_vecItemBaseCtrl;
+	std::vector<CDUISize> vecBaseOld = m_vecItemBaseSize;
+	std::vector<float> vecScaleOld = m_vecItemScale;
+
+	m_vecItemBaseCtrl.assign(nCount, NULL);
+	m_vecItemBaseSize.assign(nCount, CDUISize());
 	m_vecItemScale.assign(nCount, 1.0f);
 	m_vecItemSet.assign(nCount, tagDuiDockItemSet());
 
-	//keep the base size of the old items, the new item base is captured by its fixed size
-	std::vector<CDUISize> vecBaseOld = m_vecItemBaseSize;
-	m_vecItemBaseSize.assign(nCount, CDUISize());
-	int nCopy = min(nCount, (int)vecBaseOld.size());
-	for (int n = 0; n < nCopy; n++)
+	for (int n = 0; n < nCount; n++)
 	{
-		if (vecBaseOld[n].cx > 0 && vecBaseOld[n].cy > 0) m_vecItemBaseSize[n] = vecBaseOld[n];
+		CDUIListItemCtrl *pItem = GetChildAt(n);
+		m_vecItemBaseCtrl[n] = pItem;
+		if (NULL == pItem) continue;
+
+		int nOld = -1;
+		for (int k = 0; k < (int)vecCtrlOld.size(); k++)
+		{
+			if (vecCtrlOld[k] != pItem) continue;
+
+			nOld = k;
+
+			break;
+		}
+
+		if (nOld >= 0)
+		{
+			//the known item keeps its scale and its base
+			if (nOld < (int)vecBaseOld.size()) m_vecItemBaseSize[n] = vecBaseOld[nOld];
+			if (nOld < (int)vecScaleOld.size()) m_vecItemScale[n] = vecScaleOld[nOld];
+
+			continue;
+		}
+
+		//the new item is never written by the effect, its fixed size is the
+		//size the user set, so the base is captured here and now: captured
+		//when it is laid out, the item may already be written with the
+		//magnified size and the magnified size would become the base
+		m_vecItemBaseSize[n] = CaptureBaseSize(pItem, 1.0f);
 	}
 
 	return;
@@ -510,7 +579,29 @@ void CDUIDockBarCtrl::SyncItemScale()
 
 void CDUIDockBarCtrl::ResetItemScale()
 {
+	//the base must be captured before the scale is reset: the item fixed size
+	//is base * scale while the effect is running, if the scale is reset first
+	//the magnified size is taken as the base, then the item keeps the
+	//magnified size for ever after the effect is finished
+	SyncItemScale();
+
 	int nCount = GetChildCount();
+
+	//restore the item fixed size to its base at once, else the fixed size is
+	//still the magnified size until the next layout. the top padding is not
+	//touched here, it is owned by ApplyItemLayout, else the items jump to the
+	//top for a frame after the reset
+	for (int n = 0; n < nCount; n++)
+	{
+		CDUIListItemCtrl *pItem = GetChildAt(n);
+		if (NULL == pItem) continue;
+
+		SIZE szBase = GetBaseItemSize(n);
+		if (szBase.cx <= 0 || szBase.cy <= 0) continue;
+
+		pItem->SetFixedWidth(DuiDpiScaleBackCtrl(szBase.cx));
+		pItem->SetFixedHeight(DuiDpiScaleBackCtrl(szBase.cy));
+	}
 
 	m_vecItemScale.assign(nCount, 1.0f);
 	m_vecItemSet.assign(nCount, tagDuiDockItemSet());
@@ -521,6 +612,29 @@ void CDUIDockBarCtrl::ResetItemScale()
 void CDUIDockBarCtrl::ResetItemSet()
 {
 	m_vecItemSet.assign(GetChildCount(), tagDuiDockItemSet());
+
+	return;
+}
+
+void CDUIDockBarCtrl::RecaptureBaseSize()
+{
+	int nCount = GetChildCount();
+
+	//the scale is kept, the item size is base * scale, so the base is the
+	//current size divided by the current scale
+	m_vecItemScale.resize(nCount, 1.0f);
+	m_vecItemBaseCtrl.assign(nCount, NULL);
+	m_vecItemBaseSize.assign(nCount, CDUISize());
+	m_vecItemSet.assign(nCount, tagDuiDockItemSet());
+
+	for (int n = 0; n < nCount; n++)
+	{
+		CDUIListItemCtrl *pItem = GetChildAt(n);
+		m_vecItemBaseCtrl[n] = pItem;
+		if (NULL == pItem) continue;
+
+		m_vecItemBaseSize[n] = CaptureBaseSize(pItem, m_vecItemScale[n]);
+	}
 
 	return;
 }
@@ -539,6 +653,17 @@ void CDUIDockBarCtrl::ApplyItemLayout()
 	int nItemTop = rcRange.top + (IsTopFromRange() ? 0 : GetChildPaddingV() / 2) - szScrollPos.cy;
 	bool bAlignBottom = IsAlignBottom();
 
+	//the width is rounded by the cumulative boundary, not per item: the
+	//container is auto width and is centered again on every total width
+	//change, if every item rounds independently the total width is the sum
+	//of the independent roundings, it flips 1 pixel even when the ideal
+	//total width does not change, then the bar is placed again and the
+	//items at both ends jitter. rounding the cumulative boundaries
+	//distributes the error along the row, the total width is always the
+	//rounding of the ideal total width only
+	float fCumWidth = 0.0f;
+	int nCumRound = 0;
+
 	for (int n = 0; n < nCount; n++)
 	{
 		CDUIListItemCtrl *pItem = GetChildAt(n);
@@ -547,7 +672,12 @@ void CDUIDockBarCtrl::ApplyItemLayout()
 		//the item size is the base size(the user set fixed size) * scale
 		SIZE szBase = GetBaseItemSize(n);
 		float fScale = m_vecItemScale[n];
-		int nWidth = max(1, (int)(szBase.cx * fScale + 0.5f));
+
+		fCumWidth += (float)szBase.cx * fScale;
+		int nCum = (int)(fCumWidth + 0.5f);
+		int nWidth = max(1, nCum - nCumRound);
+		nCumRound = nCum;
+
 		int nHeight = max(1, (int)(szBase.cy * fScale + 0.5f));
 
 		//icon anchored at bottom, so the item grows up from the range bottom
@@ -584,23 +714,45 @@ void CDUIDockBarCtrl::ApplyItemLayout()
 
 SIZE CDUIDockBarCtrl::GetBaseItemSize(int nIndex)
 {
-	CDUIListItemCtrl *pItem = (nIndex >= 0 && nIndex < GetChildCount()) ? GetChildAt(nIndex) : NULL;
-	if (NULL == pItem) return SIZE{ 0, 0 };
+	int nCount = GetChildCount();
+	if (nIndex < 0 || nIndex >= nCount) return SIZE{ 0, 0 };
 
-	bool bStored = (nIndex >= 0 && nIndex < (int)m_vecItemBaseSize.size());
-	SIZE szBase = bStored ? (SIZE)m_vecItemBaseSize[nIndex] : SIZE{ 0, 0 };
+	//the state may not be synchronized yet(the first layout)
+	if ((int)m_vecItemBaseSize.size() != nCount) SyncItemScale();
+	if (nIndex >= (int)m_vecItemBaseSize.size()) return SIZE{ 0, 0 };
+
+	SIZE szBase = (SIZE)m_vecItemBaseSize[nIndex];
 	if (szBase.cx > 0 && szBase.cy > 0) return szBase;
 
-	//the base size is the item fixed size which the user set,
-	//it is captured once at first layout, the value is pixel(scaled)
-	szBase.cx = pItem->GetFixedWidth();
-	szBase.cy = pItem->GetFixedHeight();
+	//the base is captured by SyncItemScale when the item is synchronized, it
+	//is only missed by the item which is inserted and not synchronized yet
+	CDUIListItemCtrl *pItem = GetChildAt(nIndex);
+	if (NULL == pItem) return SIZE{ 0, 0 };
+
+	float fScale = (nIndex < (int)m_vecItemScale.size()) ? m_vecItemScale[nIndex] : 1.0f;
+
+	szBase = CaptureBaseSize(pItem, fScale);
+	m_vecItemBaseSize[nIndex] = szBase;
+
+	return szBase;
+}
+
+SIZE CDUIDockBarCtrl::CaptureBaseSize(CDUIControlBase *pControl, float fScale)
+{
+	SIZE szBase = { 0, 0 };
+	if (NULL == pControl) return szBase;
+
+	//the base is the item fixed size the user set, GetFixedWidth returns the
+	//pixel value, the effect writes the fixed size as base * scale, so the
+	//current scale must be divided out
+	if (fScale <= 0.0f) fScale = 1.0f;
+
+	szBase.cx = (int)((float)pControl->GetFixedWidth() / fScale + 0.5f);
+	szBase.cy = (int)((float)pControl->GetFixedHeight() / fScale + 0.5f);
 	if (szBase.cx <= 0 && szBase.cy > 0) szBase.cx = szBase.cy;
 	if (szBase.cy <= 0 && szBase.cx > 0) szBase.cy = szBase.cx;
 	if (szBase.cx <= 0) szBase.cx = DuiDpiScaleCtrl((int)DockBar_IconSize_Default);
 	if (szBase.cy <= 0) szBase.cy = szBase.cx;
-
-	if (bStored) m_vecItemBaseSize[nIndex] = szBase;
 
 	return szBase;
 }
@@ -733,6 +885,14 @@ void CDUIDockBarCtrl::OnEffectElapse()
 	if (false == bContinue)
 	{
 		StopEffect();
+
+		//the effect is finished and the mouse is not over the dock bar, no
+		//item may keep a scale: every item is restored to its base size, so
+		//a scale left by the last frame can never keep an item magnified
+		if (false == m_bMouseInDock)
+		{
+			ResetItemScale();
+		}
 	}
 
 	//apply the last frame, the item size is restored when effect is finished
@@ -757,7 +917,37 @@ bool CDUIDockBarCtrl::UpdateMouseMoveEffect()
 	nRange = max(1, nRange);
 
 	float fScaleMax = GetScaleMax();
+
+	//the mouse is not over the dock bar: the effect is leaving the bar and
+	//every item must go back to its base size. the miss index is -1 and it
+	//must never be looked up as an index: the first item is one slot away
+	//from -1, it would take the half boost of the ladder and grow for a few
+	//frames, then the finished effect restores it at once, the first item
+	//jumps bigger and back when the effect is finished.
+	//the index itself can be a negative fraction while the mouse is over the
+	//left half of the first item, so the state of the mouse is the flag, not
+	//the sign of the index
 	float fMouseIndex = GetMouseItemIndex();
+	bool bInDock = m_bMouseInDock;
+
+	//the wave center is clamped so the bell never clips at the bar ends: the
+	//clipped tail would remove width from the total, the centered bar would
+	//be placed again and the shift feeds back to the mouse index, the wave
+	//at the end edge oscillates. clamped, the affected icon count is always
+	//the same as the ladder count, the width only transfers between the
+	//items while the wave slides, never disappears
+	if (bInDock && fMouseIndex >= 0.0f)
+	{
+		float fCenterMin = (float)(nRange - 1);
+		float fCenterMax = (float)(nCount - nRange);
+		if (fCenterMin > fCenterMax)
+		{
+			//very few items, keep the wave centered
+			fCenterMin = fCenterMax = (float)(nCount - 1) * 0.5f;
+		}
+		if (fMouseIndex < fCenterMin) fMouseIndex = fCenterMin;
+		if (fMouseIndex > fCenterMax) fMouseIndex = fCenterMax;
+	}
 
 	std::vector<float> vecLadder;
 	vecLadder.resize(nRange + 1);
@@ -765,6 +955,136 @@ bool CDUIDockBarCtrl::UpdateMouseMoveEffect()
 	{
 		//cosine falloff by the icon count, symmetric on both sides of the mouse
 		vecLadder[d] = (fScaleMax - 1.0f) * 0.5f * (1.0f + cosf(PI * d / (float)nRange));
+	}
+
+	//ladder lookup for every item, the fraction is the coefficient between
+	//the two ladder steps, icons at the same index distance get the same boost.
+	//no lookup out of the dock bar: the boost sum stays 0, every target scale
+	//is 1.0 and the items shrink to their base size smoothly
+	std::vector<float> vecBoost(nCount, 0.0f);
+	float fBoostSum = 0.0f;
+	if (bInDock)
+	{
+		for (int n = 0; n < nCount; n++)
+		{
+			CDUIListItemCtrl *pItem = GetChildAt(n);
+			if (NULL == pItem || false == pItem->IsVisible()) continue;
+
+			float fDistance = fabsf((float)n - fMouseIndex);
+			if (fDistance < (float)nRange)
+			{
+				int nStep = (int)fDistance;
+				float fFrac = fDistance - (float)nStep;
+				vecBoost[n] = vecLadder[nStep] * (1.0f - fFrac) + vecLadder[nStep + 1] * fFrac;
+				fBoostSum += vecBoost[n] * (float)GetBaseItemSize(n).cx;
+			}
+		}
+	}
+
+	//the reference boost width is the cumulative width of the ladder with the
+	//wave centered in the bar, it is a constant of the ladder shape only(the
+	//item widths and the icon count), independent of the mouse position, so
+	//the total width of the items is a constant too: the wave only transfers
+	//the width between the items, it never adds or removes width
+	float fBoostRef = 0.0f;
+	float fCenterRef = (float)(nCount - 1) * 0.5f;
+	for (int n = 0; n < nCount; n++)
+	{
+		CDUIListItemCtrl *pItem = GetChildAt(n);
+		if (NULL == pItem || false == pItem->IsVisible()) continue;
+
+		float fDistance = fabsf((float)n - fCenterRef);
+		if (fDistance < (float)nRange)
+		{
+			int nStep = (int)fDistance;
+			float fFrac = fDistance - (float)nStep;
+			float fBoost = vecLadder[nStep] * (1.0f - fFrac) + vecLadder[nStep + 1] * fFrac;
+			fBoostRef += fBoost * (float)GetBaseItemSize(n).cx;
+		}
+	}
+	//the boost width is allocated in whole pixels: the floating error left by
+	//the ratio drifts the total width within one pixel, the rounded total
+	//width flips between the two integers and the centered bar jitters one
+	//pixel even the wave does not move.
+	//the pixels are allocated by the largest remainder: every item takes the
+	//integer part of its share, the rest pixels go to the items with the
+	//largest fraction, so the total is exactly the reference pixels and no
+	//item takes more than 1 pixel over its own share
+	if (fBoostSum > 0.0f && fBoostRef > 0.0f)
+	{
+		int nAddTotal = (int)(fBoostRef + 0.5f);
+
+		std::vector<int> vecAdd(nCount, 0);
+		std::vector<float> vecRemain(nCount, 0.0f);
+		int nAddSum = 0;
+
+		for (int n = 0; n < nCount; n++)
+		{
+			if (vecBoost[n] <= 0.0f) continue;
+
+			float fBase = (float)GetBaseItemSize(n).cx;
+			if (fBase <= 0.0f)
+			{
+				vecBoost[n] = 0.0f;
+
+				continue;
+			}
+
+			float fShare = vecBoost[n] * fBase / fBoostSum * (float)nAddTotal;
+			int nAdd = (int)fShare;
+			if (nAdd < 0) nAdd = 0;
+
+			vecAdd[n] = nAdd;
+			vecRemain[n] = fShare - (float)nAdd;
+			nAddSum += nAdd;
+		}
+
+		//the rest pixels go to the items with the largest fraction
+		while (nAddSum < nAddTotal)
+		{
+			int nBest = -1;
+			for (int n = 0; n < nCount; n++)
+			{
+				if (vecBoost[n] <= 0.0f) continue;
+				if (nBest < 0 || vecRemain[n] > vecRemain[nBest]) nBest = n;
+			}
+			if (nBest < 0) break;
+
+			vecAdd[nBest] += 1;
+			vecRemain[nBest] = -1.0f;
+			nAddSum += 1;
+		}
+
+		//the pixels over the reference are taken back from the smallest
+		while (nAddSum > nAddTotal)
+		{
+			int nWorst = -1;
+			for (int n = 0; n < nCount; n++)
+			{
+				if (vecBoost[n] <= 0.0f || vecAdd[n] <= 0) continue;
+				if (nWorst < 0 || vecRemain[n] < vecRemain[nWorst]) nWorst = n;
+			}
+			if (nWorst < 0) break;
+
+			vecAdd[nWorst] -= 1;
+			vecRemain[nWorst] = 2.0f;
+			nAddSum -= 1;
+		}
+
+		for (int n = 0; n < nCount; n++)
+		{
+			if (vecBoost[n] <= 0.0f) continue;
+
+			float fBase = (float)GetBaseItemSize(n).cx;
+			if (fBase <= 0.0f)
+			{
+				vecBoost[n] = 0.0f;
+
+				continue;
+			}
+
+			vecBoost[n] = (float)vecAdd[n] / fBase;
+		}
 	}
 
 	bool bChanged = false;
@@ -779,28 +1099,23 @@ bool CDUIDockBarCtrl::UpdateMouseMoveEffect()
 			continue;
 		}
 
-		float fTarget = 1.0f;
-		if (fMouseIndex >= 0.0f)
-		{
-			//the boost only depends on the icon index distance to the mouse,
-			//icons at the same index distance get the same scale
-			float fDistance = fabsf((float)n - fMouseIndex);
-			if (fDistance < (float)nRange)
-			{
-				//ladder lookup, the fraction is the coefficient between steps
-				int nStep = (int)fDistance;
-				float fFrac = fDistance - (float)nStep;
-				float fBoost = vecLadder[nStep] * (1.0f - fFrac) + vecLadder[nStep + 1] * fFrac;
-
-				fTarget = 1.0f + fBoost;
-			}
-		}
+		//the boost is already whole pixels, the applied width of the item is
+		//base + the pixels, the cumulative width is an integer in every frame.
+		//the scale can never be over the max scale of the effect: a pixel
+		//allocated to the item is the rounding error, it is at most 1 pixel
+		SIZE szBaseItem = GetBaseItemSize(n);
+		float fTargetMax = fScaleMax + 1.0f / (float)max(1, (int)szBaseItem.cx);
+		float fTarget = 1.0f + vecBoost[n];
+		if (fTarget > fTargetMax) fTarget = fTargetMax;
 
 		float fScaleOld = m_vecItemScale[n];
 		float fScale = fScaleOld + (fTarget - fScaleOld) * DockBar_Scale_Lerp_Mouse;
-		if (fTarget == 1.0f && fabs(fScale - 1.0f) <= DockBar_Scale_Epsilon)
+
+		//snap to the target, the applied width stays the same pixel
+		//once converged, it can not flip by the float error any more
+		if (fabs(fScale - fTarget) <= DockBar_Scale_Epsilon)
 		{
-			fScale = 1.0f;
+			fScale = fTarget;
 		}
 		m_vecItemScale[n] = fScale;
 
