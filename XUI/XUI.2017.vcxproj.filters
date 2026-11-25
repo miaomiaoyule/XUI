@@ -132,9 +132,6 @@
     <ClInclude Include="DUIControl\DUIListViewCtrl.h">
       <Filter>DUIControl</Filter>
     </ClInclude>
-    <ClInclude Include="DUIControl\DUIDockBarCtrl.h">
-      <Filter>DUIControl</Filter>
-    </ClInclude>
     <ClInclude Include="DUIControl\DUIProgressCtrl.h">
       <Filter>DUIControl</Filter>
     </ClInclude>
@@ -423,9 +420,6 @@
       <Filter>DUIControl</Filter>
     </ClCompile>
     <ClCompile Include="DUIControl\DUIListViewCtrl.cpp">
-      <Filter>DUIControl</Filter>
-    </ClCompile>
-    <ClCompile Include="DUIControl\DUIDockBarCtrl.cpp">
       <Filter>DUIControl</Filter>
     </ClCompile>
     <ClCompile Include="DUIControl\DUIMenuCtrl.cpp">

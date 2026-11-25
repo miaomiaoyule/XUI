@@ -18,7 +18,6 @@ CDUIFactory::CDUIFactory()
 	DUIInner_RegisterCreateControl(CDUIRotateMenuCtrl);
 	DUIInner_RegisterCreateControl(CDUIStaticCtrl);
 	DUIInner_RegisterCreateControl(CDUIListViewCtrl);
-	DUIInner_RegisterCreateControl(CDUIDockBarCtrl);
 	DUIInner_RegisterCreateControl(CDUIListHeaderCtrl);
 	DUIInner_RegisterCreateControl(CDUIListHeaderItemCtrl);
 	DUIInner_RegisterCreateControl(CDUIListItemCtrl);
