@@ -346,9 +346,9 @@ void CDUIDockBarCtrl::PerformMouseMoveEffect()
 {
 	if (GetChildCount() <= 0 || m_vecItemBaseSize.empty()) return;
 
+	CDUISize szBase = m_vecItemBaseSize[0];
 	int nEffectRange = GetEffectRange();
 	float fScaleMax = GetScaleMax();
-	CDUISize szBase = m_vecItemBaseSize[0];
 	float fScaleEvery = (fScaleMax - 1) / (nEffectRange + 1);
 	float fScaleTotal = 0;
 	for (int n = 0; n < nEffectRange; n++)
@@ -395,40 +395,17 @@ void CDUIDockBarCtrl::PerformMouseMoveEffect()
 		DockBarItem.szEffect = szEffect;
 		queEffectItem.push_back(DockBarItem);
 	}
-	/*if (nWidthEffectTotal > nWidthEffectSize 
-		&& nWidthEffectTotal < nWidthEffectSize + szBase.cx + GetChildPaddingH()
-		&& queEffectItem.size() == nEffectRange * 2 + 1 + 1)
-	{
-		tagDuiDockBarItem EffectItemFront = queEffectItem.front();
-		tagDuiDockBarItem EffectItemBack = queEffectItem.back();
-		CDUIRect rcItemFront = EffectItemFront.pItem->GetAbsoluteRect();
-		CDUIRect rcItemBack = EffectItemBack.pItem->GetAbsoluteRect();
-		if(abs(rcItemFront.left + rcItemFront.GetWidth() / 2  - m_ptMousePos.x)
-			<= abs(rcItemBack.left + rcItemBack.GetWidth() / 2 - m_ptMousePos.x))
-		{
-			nWidthEffectTotal -= (EffectItemFront.szEffect.cx);
-			EffectItemFront.pItem->SetFixedWidth(DuiDpiScaleBackCtrl(EffectItemFront.szEffect.cx));
-			EffectItemFront.pItem->SetFixedHeight(DuiDpiScaleBackCtrl(EffectItemFront.szEffect.cy));
-			queEffectItem.pop_front();
-		}
-		else
-		{
-			nWidthEffectTotal -= (EffectItemBack.szEffect.cx);
-			EffectItemBack.pItem->SetFixedWidth(DuiDpiScaleBackCtrl(EffectItemBack.szEffect.cx));
-			EffectItemBack.pItem->SetFixedHeight(DuiDpiScaleBackCtrl(EffectItemBack.szEffect.cy));
-			queEffectItem.pop_back();
-		}
-	}*/
 	while (queEffectItem.size() > nEffectRange * 2 + 1)
 	{
 		tagDuiDockBarItem EffectItemFront = queEffectItem.front();
 		tagDuiDockBarItem EffectItemBack = queEffectItem.back();
 		CDUIRect rcItemFront = EffectItemFront.pItem->GetAbsoluteRect();
 		CDUIRect rcItemBack = EffectItemBack.pItem->GetAbsoluteRect();
-		if(abs(rcItemFront.left + rcItemFront.GetWidth() / 2  - m_ptMousePos.x)
+		if (abs(rcItemFront.left + rcItemFront.GetWidth() / 2 - m_ptMousePos.x)
 			>= abs(rcItemBack.left + rcItemBack.GetWidth() / 2 - m_ptMousePos.x))
 		{
 			nWidthEffectTotal -= (EffectItemFront.szEffect.cx);
+			nWidthEffectSize -= EffectItemFront.szEffect.cx - szBase.cx;
 			EffectItemFront.pItem->SetFixedWidth(DuiDpiScaleBackCtrl(EffectItemFront.szEffect.cx));
 			EffectItemFront.pItem->SetFixedHeight(DuiDpiScaleBackCtrl(EffectItemFront.szEffect.cy));
 			queEffectItem.pop_front();
@@ -436,6 +413,7 @@ void CDUIDockBarCtrl::PerformMouseMoveEffect()
 		else
 		{
 			nWidthEffectTotal -= (EffectItemBack.szEffect.cx);
+			nWidthEffectSize -= EffectItemBack.szEffect.cx - szBase.cx;
 			EffectItemBack.pItem->SetFixedWidth(DuiDpiScaleBackCtrl(EffectItemBack.szEffect.cx));
 			EffectItemBack.pItem->SetFixedHeight(DuiDpiScaleBackCtrl(EffectItemBack.szEffect.cy));
 			queEffectItem.pop_back();
@@ -443,8 +421,6 @@ void CDUIDockBarCtrl::PerformMouseMoveEffect()
 	}
 	if (queEffectItem.size() > 0)
 	{
-		MMTRACE(_T("effect count:%d\n"), queEffectItem.size());
-		bool bAdd = nWidthEffectSize > nWidthEffectTotal;
 		int nWidthSurplus = abs(nWidthEffectSize - nWidthEffectTotal);
 		int nWidthEvery = nWidthSurplus / queEffectItem.size();
 		nWidthSurplus = nWidthSurplus % queEffectItem.size();
@@ -452,8 +428,8 @@ void CDUIDockBarCtrl::PerformMouseMoveEffect()
 		{
 			if (NULL == EffectItem.pItem) continue;
 
-			int nWidth = EffectItem.szEffect.cx + (bAdd ? nWidthEvery : -nWidthEvery);
-			nWidth += (nWidthSurplus > 0 ? (bAdd ? 1 : -1) : 0);
+			int nWidth = EffectItem.szEffect.cx + (nWidthEvery);
+			nWidth += (nWidthSurplus > 0 ? (1) : 0);
 			nWidthSurplus--;
 			nWidthSurplus = max(0, nWidthSurplus);
 			EffectItem.pItem->SetFixedWidth(DuiDpiScaleBackCtrl(nWidth));

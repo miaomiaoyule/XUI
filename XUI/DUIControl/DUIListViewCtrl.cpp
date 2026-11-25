@@ -3013,6 +3013,7 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeH()
 		int nTopOffset = (IsTopFromRange() ? 0 : GetChildPaddingV() / 2);
 		int nTop = rcItemRange.top + nRow * m_nHeightRow + nTopOffset - szScrollPos.cy;
 		int nBottom = nTop + (pItem->GetFixedHeight() <= 0 ? m_nHeightRow - GetChildPaddingV() : pItem->GetFixedHeight());	
+		nBottom = IsAutoCalcWidth() ? rcItemRange.bottom : nBottom;
 		nCurScrollRangeY = max(nCurScrollRangeY, nBottom + szScrollPos.cy + GetChildPaddingV() / 2 - rcItemRange.top);
 		m++;
 
@@ -3128,6 +3129,7 @@ void CDUIListViewCtrl::CalcShowItemOnTileTypeV()
 		int nLeftOffset = (IsLeftFromRange() ? 0 : GetChildPaddingH() / 2);
 		int nLeft = rcItemRange.left + nColumn * m_nWidthColumn + nLeftOffset - szScrollPos.cx;
 		int nRight = nLeft + (pItem->GetFixedWidth() <= 0 ? m_nWidthColumn - GetChildPaddingH() : pItem->GetFixedWidth());
+		nRight = IsAutoCalcHeight() ? rcItemRange.right : nRight;
 		nCurScrollRangeX = max(nCurScrollRangeX, nRight + szScrollPos.cx + GetChildPaddingH() / 2 - rcItemRange.left);
 		m++;
 
