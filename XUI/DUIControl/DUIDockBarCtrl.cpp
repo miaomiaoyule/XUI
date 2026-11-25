@@ -225,7 +225,7 @@ bool CDUIDockBarCtrl::OnDuiMouseMove(const CDUIPoint &pt, const DuiMessage &Msg)
 {
 	bool bRes = __super::OnDuiMouseMove(pt, Msg);
 
-	if (DockBarEffect_MouseMove == GetEffectType())
+	if (DockBarEffect_MouseMove == GetEffectType() && m_vecItemBaseSize.size() > 0)
 	{
 		m_ptMousePos = pt;
 
@@ -346,6 +346,7 @@ void CDUIDockBarCtrl::PerformMouseMoveEffect()
 {
 	if (GetChildCount() <= 0 || m_vecItemBaseSize.empty()) return;
 
+	CDUIRect rcItemRange = GetLayoutRangeOfItem();
 	CDUISize szBase = m_vecItemBaseSize[0];
 	int nEffectRange = GetEffectRange();
 	float fScaleMax = GetScaleMax();
@@ -364,8 +365,8 @@ void CDUIDockBarCtrl::PerformMouseMoveEffect()
 	CDUIRect rcEffectRange;
 	rcEffectRange.left = m_ptMousePos.x - nWidthEffectSize / 2;
 	rcEffectRange.right = m_ptMousePos.x + nWidthEffectSize / 2;
-	rcEffectRange.top = m_ptMousePos.y;
-	rcEffectRange.bottom = rcEffectRange.top + 1;
+	rcEffectRange.top = rcItemRange.top;
+	rcEffectRange.bottom = rcItemRange.bottom;
 	int nLengthStep = rcEffectRange.GetWidth() / 2;
 	std::deque<tagDuiDockBarItem> queEffectItem;
 	for (int n = 0; n < GetChildCount() && n < m_vecItemBaseSize.size(); n++)
@@ -419,7 +420,7 @@ void CDUIDockBarCtrl::PerformMouseMoveEffect()
 			queEffectItem.pop_back();
 		}
 	}
-	if (queEffectItem.size() > 0)
+	if (queEffectItem.size() == nEffectRange * 2 + 1)
 	{
 		int nWidthSurplus = abs(nWidthEffectSize - nWidthEffectTotal);
 		int nWidthEvery = nWidthSurplus / queEffectItem.size();
