@@ -86,6 +86,7 @@ public:
 
 	//message
 protected:
+	bool OnDuiMouseMove(const CDUIPoint &pt, const DuiMessage &Msg) override;
 	void OnDuiMouseLeave(const CDUIPoint &pt, const DuiMessage &Msg) override;
 	void OnDuiWndManagerDetach() override;
 

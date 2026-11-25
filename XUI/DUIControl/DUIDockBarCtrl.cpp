@@ -221,6 +221,21 @@ void CDUIDockBarCtrl::SetReflectionRatio(float fRatio)
 	return;
 }
 
+bool CDUIDockBarCtrl::OnDuiMouseMove(const CDUIPoint &pt, const DuiMessage &Msg)
+{
+	bool bRes = __super::OnDuiMouseMove(pt, Msg);
+
+	if (DockBarEffect_MouseMove == GetEffectType())
+	{
+		m_ptMousePos = pt;
+
+		StartEffect();
+		PerformMouseMoveEffect();
+	}
+
+	return bRes;
+}
+
 void CDUIDockBarCtrl::OnDuiMouseLeave(const CDUIPoint &pt, const DuiMessage &Msg)
 {
 	__super::OnDuiMouseLeave(pt, Msg);
@@ -270,12 +285,13 @@ void CDUIDockBarCtrl::InitComplete()
 
 void CDUIDockBarCtrl::OnItemMouseMove(CDUIControlBase *pControl, const DuiNotify &Notify)
 {
-	if (DockBarEffect_MouseMove != GetEffectType()) return;
+	if (DockBarEffect_MouseMove == GetEffectType())
+	{
+		m_ptMousePos = Notify.ptMouse;
 
-	m_ptMousePos = Notify.ptMouse;
-
-	StartEffect();
-	PerformMouseMoveEffect();
+		StartEffect();
+		PerformMouseMoveEffect();
+	}
 
 	return;
 }
@@ -333,16 +349,25 @@ void CDUIDockBarCtrl::PerformMouseMoveEffect()
 	int nEffectRange = GetEffectRange();
 	float fScaleMax = GetScaleMax();
 	CDUISize szBase = m_vecItemBaseSize[0];
-	CDUIRect rcEffectRange;
-	int nWidthEffectSize = szBase.cx * (fScaleMax - 1);
+	float fScaleEvery = (fScaleMax - 1) / (nEffectRange + 1);
+	float fScaleTotal = 0;
+	for (int n = 0; n < nEffectRange; n++)
+	{
+		fScaleTotal += 1;
+		fScaleTotal += (fScaleEvery * (n + 1));
+	}
+
+	fScaleTotal *= 2;
+	fScaleTotal += fScaleMax;
+	int nWidthEffectSize = szBase.cx * fScaleTotal + GetChildPaddingH() * nEffectRange * 2;
 	int nWidthEffectTotal = 0;
+	CDUIRect rcEffectRange;
 	rcEffectRange.left = m_ptMousePos.x - nWidthEffectSize / 2;
-	rcEffectRange.left -= (szBase.cx + GetChildPaddingH()) * nEffectRange;
-	rcEffectRange.right = m_ptMousePos.x + (m_ptMousePos.x - rcEffectRange.left);
+	rcEffectRange.right = m_ptMousePos.x + nWidthEffectSize / 2;
 	rcEffectRange.top = m_ptMousePos.y;
 	rcEffectRange.bottom = rcEffectRange.top + 1;
 	int nLengthStep = rcEffectRange.GetWidth() / 2;
-	std::vector<tagDuiDockBarItem> vecEffectItem;
+	std::deque<tagDuiDockBarItem> queEffectItem;
 	for (int n = 0; n < GetChildCount() && n < m_vecItemBaseSize.size(); n++)
 	{
 		CDUIListItemCtrl *pItem = GetChildAt(n);
@@ -363,28 +388,76 @@ void CDUIDockBarCtrl::PerformMouseMoveEffect()
 		CDUISize szEffect;
 		szEffect.cx = (m_vecItemBaseSize[n].cx * fScale);
 		szEffect.cy = (m_vecItemBaseSize[n].cy * fScale);
-		nWidthEffectTotal += (szEffect.cx - m_vecItemBaseSize[n].cx);
+		nWidthEffectTotal += (szEffect.cx);
 
 		tagDuiDockBarItem DockBarItem;
 		DockBarItem.pItem = pItem;
 		DockBarItem.szEffect = szEffect;
-		vecEffectItem.push_back(DockBarItem);
+		queEffectItem.push_back(DockBarItem);
 	}
-	if (vecEffectItem.size() > 0)
+	/*if (nWidthEffectTotal > nWidthEffectSize 
+		&& nWidthEffectTotal < nWidthEffectSize + szBase.cx + GetChildPaddingH()
+		&& queEffectItem.size() == nEffectRange * 2 + 1 + 1)
 	{
-		int nWidthSurplus = max(0, nWidthEffectSize - nWidthEffectTotal);
-		int nWidthEvery = nWidthSurplus / vecEffectItem.size();
-		nWidthSurplus = nWidthSurplus % vecEffectItem.size();
-		for (auto DockBarItem : vecEffectItem)
+		tagDuiDockBarItem EffectItemFront = queEffectItem.front();
+		tagDuiDockBarItem EffectItemBack = queEffectItem.back();
+		CDUIRect rcItemFront = EffectItemFront.pItem->GetAbsoluteRect();
+		CDUIRect rcItemBack = EffectItemBack.pItem->GetAbsoluteRect();
+		if(abs(rcItemFront.left + rcItemFront.GetWidth() / 2  - m_ptMousePos.x)
+			<= abs(rcItemBack.left + rcItemBack.GetWidth() / 2 - m_ptMousePos.x))
 		{
-			if (NULL == DockBarItem.pItem) continue;
+			nWidthEffectTotal -= (EffectItemFront.szEffect.cx);
+			EffectItemFront.pItem->SetFixedWidth(DuiDpiScaleBackCtrl(EffectItemFront.szEffect.cx));
+			EffectItemFront.pItem->SetFixedHeight(DuiDpiScaleBackCtrl(EffectItemFront.szEffect.cy));
+			queEffectItem.pop_front();
+		}
+		else
+		{
+			nWidthEffectTotal -= (EffectItemBack.szEffect.cx);
+			EffectItemBack.pItem->SetFixedWidth(DuiDpiScaleBackCtrl(EffectItemBack.szEffect.cx));
+			EffectItemBack.pItem->SetFixedHeight(DuiDpiScaleBackCtrl(EffectItemBack.szEffect.cy));
+			queEffectItem.pop_back();
+		}
+	}*/
+	while (queEffectItem.size() > nEffectRange * 2 + 1)
+	{
+		tagDuiDockBarItem EffectItemFront = queEffectItem.front();
+		tagDuiDockBarItem EffectItemBack = queEffectItem.back();
+		CDUIRect rcItemFront = EffectItemFront.pItem->GetAbsoluteRect();
+		CDUIRect rcItemBack = EffectItemBack.pItem->GetAbsoluteRect();
+		if(abs(rcItemFront.left + rcItemFront.GetWidth() / 2  - m_ptMousePos.x)
+			>= abs(rcItemBack.left + rcItemBack.GetWidth() / 2 - m_ptMousePos.x))
+		{
+			nWidthEffectTotal -= (EffectItemFront.szEffect.cx);
+			EffectItemFront.pItem->SetFixedWidth(DuiDpiScaleBackCtrl(EffectItemFront.szEffect.cx));
+			EffectItemFront.pItem->SetFixedHeight(DuiDpiScaleBackCtrl(EffectItemFront.szEffect.cy));
+			queEffectItem.pop_front();
+		}
+		else
+		{
+			nWidthEffectTotal -= (EffectItemBack.szEffect.cx);
+			EffectItemBack.pItem->SetFixedWidth(DuiDpiScaleBackCtrl(EffectItemBack.szEffect.cx));
+			EffectItemBack.pItem->SetFixedHeight(DuiDpiScaleBackCtrl(EffectItemBack.szEffect.cy));
+			queEffectItem.pop_back();
+		}
+	}
+	if (queEffectItem.size() > 0)
+	{
+		MMTRACE(_T("effect count:%d\n"), queEffectItem.size());
+		bool bAdd = nWidthEffectSize > nWidthEffectTotal;
+		int nWidthSurplus = abs(nWidthEffectSize - nWidthEffectTotal);
+		int nWidthEvery = nWidthSurplus / queEffectItem.size();
+		nWidthSurplus = nWidthSurplus % queEffectItem.size();
+		for (auto EffectItem : queEffectItem)
+		{
+			if (NULL == EffectItem.pItem) continue;
 
-			int nWidth = DockBarItem.szEffect.cx + nWidthEvery;
-			nWidth += (nWidthSurplus > 0 ? 1 : 0);
+			int nWidth = EffectItem.szEffect.cx + (bAdd ? nWidthEvery : -nWidthEvery);
+			nWidth += (nWidthSurplus > 0 ? (bAdd ? 1 : -1) : 0);
 			nWidthSurplus--;
 			nWidthSurplus = max(0, nWidthSurplus);
-			DockBarItem.pItem->SetFixedWidth(DuiDpiScaleBackCtrl(nWidth));
-			DockBarItem.pItem->SetFixedHeight(DuiDpiScaleBackCtrl(DockBarItem.szEffect.cy));
+			EffectItem.pItem->SetFixedWidth(DuiDpiScaleBackCtrl(nWidth));
+			EffectItem.pItem->SetFixedHeight(DuiDpiScaleBackCtrl(EffectItem.szEffect.cy));
 		}
 	}
 
