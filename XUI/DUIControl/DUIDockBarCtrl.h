@@ -5,22 +5,16 @@
 #pragma pack(1)
 
 //////////////////////////////////////////////////////////////////////////
-//dock bar effect timer
-#define DockBar_Effect_Elapse					(15)
-
 //dock bar default
-#define DockBar_IconSize_Default				(48)
 #define DockBar_ScaleMax_Default				(1.6f)
-#define DockBar_Scale_Epsilon					(0.002f)
-#define DockBar_EffectRange_Icon_Default		(2)				//icons affected each side of mouse
+#define DockBar_EffectRange_Icon_Default		(1)				//icons affected each side of mouse
 #define DockBar_ReflectionRatio_Default			(0.45f)			//reflection height / icon height, same as GenerateReflectionBitmap
 
 //item value which is set last time, keep it to avoid refresh loop
-struct tagDuiDockItemSet
+struct tagDuiDockBarItem
 {
-	int											nWidth = -1;
-	int											nHeight = -1;
-	int											nPaddingTop = -1;
+	CDUIListItemCtrl *							pItem = NULL;
+	CDUISize									szEffect;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -42,25 +36,18 @@ public:
 protected:
 	CDUIAttributeGroup							m_AttributeGroupDockBar;
 	CDUIAttributeCombox							m_AttributeEffectType;
-	CDUIAttributeBool							m_AttributeAlignBottom = true;
-	CDUIAttributeFloat							m_AttributeScaleMax = DockBar_ScaleMax_Default; //max scale of icon
-	CDUIAttributeLong							m_AttributeEffectRange;							//icon count affected each side of mouse, 0 == auto
-	CDUIAttributeFloat							m_AttributeReflectionRatio = DockBar_ReflectionRatio_Default; //reflection height / icon height of the item background image(icon + reflection)
-	
+	CDUIAttributeFloat							m_AttributeScaleMax = DockBar_ScaleMax_Default;
+	CDUIAttributeLong							m_AttributeEffectRange = DockBar_EffectRange_Icon_Default;
+	CDUIAttributeFloat							m_AttributeReflectionRatio = DockBar_ReflectionRatio_Default; 
+
 	//variant
 protected:
-	std::vector<float>							m_vecItemScale;								//current scale of every item
-	std::vector<tagDuiDockItemSet>				m_vecItemSet;								//value set to item last time
-	std::vector<CDUISize>						m_vecItemBaseSize;							//base size(pixel) of every item, captured at first layout
-	std::vector<CDUIListItemCtrl*>				m_vecItemBaseCtrl;							//the item the base size belongs to, the item may be removed and inserted again while it is dragged
-	int											m_nMousePosX = 0;							//mouse x of the window, the hit is computed by the current item rects
-	bool										m_bMouseInDock = false;
-	UINT_PTR									m_uEffectTimer = 0;							//effect timer of window
+	std::vector<CDUISize>						m_vecItemBaseSize;
+	CDUIPoint									m_ptMousePos;
 
 	//override
 protected:
 	bool OnAttributeChange(CDUIAttributeObject *pAttributeObj) override;
-	void OnDpiChanged(int nScalePre) override;
 	void OnNotify(CDUIControlBase *pControl, const DuiNotify &Notify) override;
 	void OnRelease(CDUIControlBase *pControl) override;
 	
@@ -71,10 +58,8 @@ public:
 
 	//refresh
 	CDUIRect GetBorderRect() override;
-	void RefreshView() override;
 
 	//tile type
-	CDUISize GetSwitchTileItemSize() override;
 	bool IsAutoCalcItemWidth() override;
 	bool IsAutoCalcItemHeight() override;
 
@@ -92,25 +77,15 @@ public:
 	//dock bar
 	virtual enDuiDockBarEffectType GetEffectType();
 	virtual void SetEffectType(enDuiDockBarEffectType EffectType);
-	virtual float GetReflectionRatio();
-	virtual void SetReflectionRatio(float fRatio);
-
-	//icon
-	virtual bool IsAlignBottom();
-	virtual void SetAlignBottom(bool bBottom);
-
-	//effect
 	virtual float GetScaleMax();
 	virtual void SetScaleMax(float fScaleMax);
 	virtual int GetEffectRange();
 	virtual void SetEffectRange(int nRange);
-
-	//item
-	virtual float GetItemScale(int nIndex);
+	virtual float GetReflectionRatio();
+	virtual void SetReflectionRatio(float fRatio);
 
 	//message
 protected:
-	bool OnDuiMouseMove(const CDUIPoint &pt, const DuiMessage &Msg) override;
 	void OnDuiMouseLeave(const CDUIPoint &pt, const DuiMessage &Msg) override;
 	void OnDuiWndManagerDetach() override;
 
@@ -126,21 +101,9 @@ protected:
 
 	//help
 protected:
-	void SyncItemScale();
-	void ResetItemScale();
-	void ResetItemSet();
-	void RecaptureBaseSize();
-
-	void ApplyItemLayout();
-	SIZE GetBaseItemSize(int nIndex);
-	SIZE CaptureBaseSize(CDUIControlBase *pControl, float fScale);
-	float GetMouseItemIndex();
-
-	void StartEffectTimer();
+	void StartEffect();
 	void StopEffect();
-	void OnEffectElapse();
-	bool UpdateMouseMoveEffect();
-	void OnDockAttributeChanged(bool bResetScale);
+	void PerformMouseMoveEffect();
 };
 
 //////////////////////////////////////////////////////////////////////////
