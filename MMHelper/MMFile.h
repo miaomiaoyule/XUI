@@ -8,12 +8,12 @@
 enum enMMFileType
 {
 	FileType_None,
+	FileType_Exe,
 	FileType_Dir,
 	FileType_Doc,
 	FileType_Image,
 	FileType_Movie,
 	FileType_Zip,
-	FileType_Exe,
 	FileType_Lnk,
 	FileType_File,
 };

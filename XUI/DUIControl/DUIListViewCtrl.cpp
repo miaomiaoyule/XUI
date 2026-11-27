@@ -741,7 +741,7 @@ CDUISize CDUIListViewCtrl::GetSwitchTileItemSize()
 
 void CDUIListViewCtrl::SetSwitchTileItemSize(CDUISize szItem)
 {
-	if (szItem.cx <= 0 || szItem.cy <= 0 || DuiDpiScaleCtrl(szItem) == GetSwitchTileItemSize()) return;
+	if (szItem.cx < 0 || szItem.cy < 0 || DuiDpiScaleCtrl(szItem) == GetSwitchTileItemSize()) return;
 
 	m_AttributeSwitchTileItemSize.SetValue(szItem);
 
