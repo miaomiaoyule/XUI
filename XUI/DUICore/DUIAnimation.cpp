@@ -410,11 +410,13 @@ void CDUIAnimationDrag::OnAnimationStep(int nAnimationID, int nTotalFrame, int n
 			(int)(szDistance.cy * Drag_Animate_Move_Factor)
 		};
 
-		//ensure the last pixels are moved, else the item never reaches the dest,
-		//the axis which is already at the dest must be kept, else the item
-		//jitters 1 pixel on that axis every frame
-		if (0 == szOffset.cx && 0 != szDistance.cx) szOffset.cx = (szDistance.cx > 0) ? 1 : -1;
-		if (0 == szOffset.cy && 0 != szDistance.cy) szOffset.cy = (szDistance.cy > 0) ? 1 : -1;
+		//the integer cast rounds the fractional step away, the axis with a
+		//step under two pixels would crawl at one pixel per frame and the
+		//item would never reach the dest, such a small move is not worth a
+		//crawl: the axis just arrives at the dest at once, the convergence
+		//is kept and the crawl of the last few pixels is gone
+		if (abs(szOffset.cx) < 2 && 0 != szDistance.cx) szOffset.cx = szDistance.cx;
+		if (abs(szOffset.cy) < 2 && 0 != szDistance.cy) szOffset.cy = szDistance.cy;
 
 		pMoveCtrl->MovePosition(szOffset);
 
